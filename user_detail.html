@@ -107,6 +107,51 @@
             color: rgba(255,255,255,0.4);
         }
 
+        /* ===== MULTI IMAGE GRID ===== */
+        .multi-image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .multi-image-grid .thumb {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.04);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.1);
+        }
+
+        .multi-image-grid .thumb:hover {
+            border-color: rgba(255,204,0,0.3);
+            transform: scale(1.02);
+        }
+
+        .multi-image-grid .thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .multi-image-grid .thumb .count-badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
         /* ===== INFO GRID ===== */
         .info-grid {
             display: grid;
@@ -176,26 +221,84 @@
             justify-content: center;
             padding: 20px;
             cursor: pointer;
+            flex-direction: column;
         }
 
         .fullscreen-overlay.active {
             display: flex;
         }
 
-        .fullscreen-overlay img {
+        .fullscreen-overlay .fs-image-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+        }
+
+        .fullscreen-overlay .fs-image-container img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
             border-radius: 8px;
+            transition: transform 0.1s ease;
+            transform-origin: center center;
         }
 
-        .fullscreen-overlay .close-hint {
+        .fullscreen-overlay .fs-close-hint {
             position: absolute;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             color: rgba(255,255,255,0.2);
             font-size: 0.8rem;
+            pointer-events: none;
+        }
+
+        .fullscreen-overlay .fs-counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .fullscreen-overlay .fs-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.4);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .fullscreen-overlay .fs-nav:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .fullscreen-overlay .fs-nav.prev {
+            left: 12px;
+        }
+
+        .fullscreen-overlay .fs-nav.next {
+            right: 12px;
         }
 
         /* ===== RESPONSIVE ===== */
@@ -211,6 +314,17 @@
 
             .detail-section {
                 padding: 12px;
+            }
+
+            .multi-image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+                gap: 6px;
+            }
+
+            .fullscreen-overlay .fs-nav {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
             }
         }
 
@@ -237,7 +351,7 @@
     <!-- ===== KENDERAAN SECTION ===== -->
     <div class="detail-section" id="kendSection">
         <div class="section-title">🚗 Maklumat Kenderaan</div>
-        <div class="image-box" id="kendImageBox" onclick="toggleFullscreen('kend')">
+        <div class="image-box" id="kendImageBox" onclick="openFullscreen('kend', 0)">
             <span class="placeholder" id="kendPlaceholder">🚗</span>
             <span class="tap-hint">👆 Tap full screen</span>
         </div>
@@ -252,7 +366,7 @@
     <!-- ===== RTAX SECTION ===== -->
     <div class="detail-section" id="rtaxSection">
         <div class="section-title">📑 Roadtax</div>
-        <div class="image-box" id="rtaxImageBox" onclick="toggleFullscreen('rtax')">
+        <div class="image-box" id="rtaxImageBox" onclick="openFullscreen('rtax', 0)">
             <span class="placeholder" id="rtaxPlaceholder">📑</span>
             <span class="tap-hint">👆 Tap full screen</span>
         </div>
@@ -263,17 +377,19 @@
         </div>
     </div>
 
-    <!-- ===== INS SECTION ===== -->
+    <!-- ===== INS SECTION (Multi Pictures) ===== -->
     <div class="detail-section" id="insSection">
         <div class="section-title">📋 Insurans</div>
-        <div class="image-box" id="insImageBox" onclick="toggleFullscreen('ins')">
-            <span class="placeholder" id="insPlaceholder">📋</span>
-            <span class="tap-hint">👆 Tap full screen</span>
-        </div>
         <div class="info-grid" id="insInfo">
             <div class="info-item"><span class="info-label">Ins_ID :</span> <span class="info-value" id="insId">-</span></div>
             <div class="info-item"><span class="info-label">Ins_date :</span> <span class="info-value" id="insDate">-</span></div>
             <div class="info-item"><span class="info-label">Ins_no :</span> <span class="info-value" id="insNo">-</span></div>
+        </div>
+        <div style="margin-top:8px;">
+            <div style="font-size:0.7rem;color:rgba(255,255,255,0.2);margin-bottom:6px;">Gambar Insurans (tap untuk fullscreen)</div>
+            <div class="multi-image-grid" id="insImageGrid">
+                <!-- Akan diisi oleh JavaScript -->
+            </div>
         </div>
     </div>
 
@@ -285,9 +401,14 @@
 </div>
 
 <!-- ===== FULLSCREEN OVERLAY ===== -->
-<div class="fullscreen-overlay" id="fullscreenOverlay" onclick="closeFullscreen()">
-    <img id="fullscreenImage" src="" alt="Fullscreen">
-    <span class="close-hint">👆 Tap to close</span>
+<div class="fullscreen-overlay" id="fullscreenOverlay" onclick="closeFullscreen(event)">
+    <div class="fs-image-container" id="fsImageContainer">
+        <img id="fullscreenImage" src="" alt="Fullscreen">
+    </div>
+    <button class="fs-nav prev" id="fsPrev" onclick="event.stopPropagation(); navigateFullscreen(-1)">‹</button>
+    <button class="fs-nav next" id="fsNext" onclick="event.stopPropagation(); navigateFullscreen(1)">›</button>
+    <span class="fs-counter" id="fsCounter">1 / 1</span>
+    <span class="fs-close-hint">👆 Tap to close</span>
 </div>
 
 <script type="module">
@@ -328,14 +449,18 @@
     const insId = document.getElementById('insId');
     const insDate = document.getElementById('insDate');
     const insNo = document.getElementById('insNo');
-    const insImageBox = document.getElementById('insImageBox');
-    const insPlaceholder = document.getElementById('insPlaceholder');
+    const insImageGrid = document.getElementById('insImageGrid');
 
     const fullscreenOverlay = document.getElementById('fullscreenOverlay');
     const fullscreenImage = document.getElementById('fullscreenImage');
-    const maintBtn = document.getElementById('maintBtn');
+    const fsCounter = document.getElementById('fsCounter');
+    const fsPrev = document.getElementById('fsPrev');
+    const fsNext = document.getElementById('fsNext');
 
-    let currentImageType = '';
+    // ===== FULLSCREEN STATE =====
+    let fullscreenImages = [];
+    let currentIndex = 0;
+    let currentType = '';
 
     // ===== BACK =====
     window.goBack = function() {
@@ -348,25 +473,102 @@
     };
 
     // ===== FULLSCREEN =====
-    window.toggleFullscreen = function(type) {
-        let imgElement = null;
+    window.openFullscreen = function(type, index) {
         if (type === 'kend') {
-            imgElement = kendImageBox.querySelector('img');
+            const img = kendImageBox.querySelector('img');
+            if (img && img.src) {
+                fullscreenImages = [img.src];
+                currentIndex = 0;
+                currentType = 'kend';
+                showFullscreen();
+            }
         } else if (type === 'rtax') {
-            imgElement = rtaxImageBox.querySelector('img');
+            const img = rtaxImageBox.querySelector('img');
+            if (img && img.src) {
+                fullscreenImages = [img.src];
+                currentIndex = 0;
+                currentType = 'rtax';
+                showFullscreen();
+            }
         } else if (type === 'ins') {
-            imgElement = insImageBox.querySelector('img');
-        }
-
-        if (imgElement && imgElement.src) {
-            fullscreenImage.src = imgElement.src;
-            fullscreenOverlay.classList.add('active');
+            const thumbs = insImageGrid.querySelectorAll('.thumb img');
+            if (thumbs.length > 0) {
+                fullscreenImages = [];
+                thumbs.forEach(img => {
+                    if (img.src) fullscreenImages.push(img.src);
+                });
+                currentIndex = Math.min(index, fullscreenImages.length - 1);
+                currentType = 'ins';
+                showFullscreen();
+            }
         }
     };
 
-    window.closeFullscreen = function() {
+    function showFullscreen() {
+        if (fullscreenImages.length === 0) return;
+        updateFullscreenImage();
+        fullscreenOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function updateFullscreenImage() {
+        if (fullscreenImages.length > 0 && currentIndex < fullscreenImages.length) {
+            fullscreenImage.src = fullscreenImages[currentIndex];
+            fsCounter.textContent = `${currentIndex + 1} / ${fullscreenImages.length}`;
+            fsPrev.style.display = fullscreenImages.length > 1 ? 'flex' : 'none';
+            fsNext.style.display = fullscreenImages.length > 1 ? 'flex' : 'none';
+            // Reset zoom
+            fullscreenImage.style.transform = 'scale(1)';
+            fullscreenImage.style.transition = 'transform 0.1s ease';
+        }
+    }
+
+    window.navigateFullscreen = function(direction) {
+        const newIndex = currentIndex + direction;
+        if (newIndex >= 0 && newIndex < fullscreenImages.length) {
+            currentIndex = newIndex;
+            updateFullscreenImage();
+        }
+    };
+
+    window.closeFullscreen = function(event) {
+        if (event && event.target !== event.currentTarget) return;
         fullscreenOverlay.classList.remove('active');
+        document.body.style.overflow = '';
     };
+
+    // ===== ZOOM (Pinch to Zoom) =====
+    let lastTouchDistance = 0;
+    let currentScale = 1;
+
+    fullscreenImage.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            lastTouchDistance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            currentScale = 1;
+        }
+    }, { passive: true });
+
+    fullscreenImage.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            if (lastTouchDistance > 0) {
+                const scale = distance / lastTouchDistance;
+                const newScale = Math.max(0.5, Math.min(3, currentScale * scale));
+                fullscreenImage.style.transform = `scale(${newScale})`;
+                currentScale = newScale;
+            }
+            lastTouchDistance = distance;
+        }
+    }, { passive: false });
+
+    fullscreenImage.addEventListener('touchend', function(e) {
+        lastTouchDistance = 0;
+    }, { passive: true });
 
     // ===== LOAD DATA =====
     async function loadDetail() {
@@ -396,7 +598,6 @@
                 rtaxDate.textContent = rtax.rtax_date || '-';
                 rtaxNo.textContent = rtax.rtax_no || '-';
 
-                // Check expiry
                 if (rtax.rtax_date) {
                     const parts = rtax.rtax_date.split('-');
                     const expiry = new Date(parts[2], parts[1]-1, parts[0]);
@@ -422,7 +623,6 @@
                 insDate.textContent = ins.ins_date || '-';
                 insNo.textContent = ins.ins_no || '-';
 
-                // Check expiry
                 if (ins.ins_date) {
                     const parts = ins.ins_date.split('-');
                     const expiry = new Date(parts[2], parts[1]-1, parts[0]);
@@ -435,8 +635,19 @@
                     }
                 }
 
+                // Render multiple images
                 if (ins.ins_pic && ins.ins_pic.length > 0) {
-                    insPlaceholder.innerHTML = `<img src="${ins.ins_pic[0]}" alt="Insurans">`;
+                    insImageGrid.innerHTML = ins.ins_pic.map((url, index) => `
+                        <div class="thumb" onclick="openFullscreen('ins', ${index})">
+                            <img src="${url}" alt="Insurans ${index+1}">
+                        </div>
+                    `).join('');
+                } else {
+                    insImageGrid.innerHTML = `
+                        <div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.1);padding:10px;font-size:0.8rem;">
+                            Tiada gambar
+                        </div>
+                    `;
                 }
             }
 
