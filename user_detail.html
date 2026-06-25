@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Detail - Vehicle Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <style>
+        .detail-wrapper {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 16px;
+        }
+
+        .detail-header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            margin: 0;
+        }
+
+        .detail-header .back-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.6);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 40px;
+        }
+
+        .detail-header .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* ===== SECTION ===== */
+        .detail-section {
+            background: rgba(26, 26, 46, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .detail-section .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.3);
+            margin-bottom: 12px;
+        }
+
+        /* ===== IMAGE BOX ===== */
+        .image-box {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.3s ease;
+        }
+
+        .image-box:hover {
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .image-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-box .placeholder {
+            font-size: 4rem;
+            color: rgba(255,255,255,0.1);
+        }
+
+        .image-box .tap-hint {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        /* ===== INFO GRID ===== */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 12px;
+            margin-top: 12px;
+        }
+
+        .info-grid .info-item {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .info-grid .info-item .info-label {
+            opacity: 0.5;
+        }
+
+        .info-grid .info-item .info-value {
+            color: rgba(255,255,255,0.85);
+        }
+
+        .info-grid .info-item .info-value.warning {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        .info-grid .info-item .info-value.good {
+            color: #00e676;
+        }
+
+        /* ===== MAINTENANCE BUTTON ===== */
+        .maint-btn {
+            width: 100%;
+            padding: 14px;
+            background: rgba(0,230,118,0.08);
+            border: 1px solid rgba(0,230,118,0.15);
+            border-radius: 12px;
+            color: #00e676;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .maint-btn:hover {
+            background: rgba(0,230,118,0.15);
+            border-color: rgba(0,230,118,0.25);
+            transform: translateY(-2px);
+        }
+
+        .maint-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* ===== FULLSCREEN OVERLAY ===== */
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            cursor: pointer;
+        }
+
+        .fullscreen-overlay.active {
+            display: flex;
+        }
+
+        .fullscreen-overlay img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .fullscreen-overlay .close-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.2);
+            font-size: 0.8rem;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 2px;
+            }
+
+            .image-box .placeholder {
+                font-size: 3rem;
+            }
+
+            .detail-section {
+                padding: 12px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .detail-wrapper {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="detail-wrapper">
+
+    <!-- ===== HEADER ===== -->
+    <div class="detail-header">
+        <button class="back-btn" onclick="goBack()">← Kembali</button>
+        <h1 id="pageTitle">📄 Detail</h1>
+        <span style="width:70px;"></span>
+    </div>
+
+    <!-- ===== KENDERAAN SECTION ===== -->
+    <div class="detail-section" id="kendSection">
+        <div class="section-title">🚗 Maklumat Kenderaan</div>
+        <div class="image-box" id="kendImageBox" onclick="toggleFullscreen('kend')">
+            <span class="placeholder" id="kendPlaceholder">🚗</span>
+            <span class="tap-hint">👆 Tap full screen</span>
+        </div>
+        <div class="info-grid" id="kendInfo">
+            <div class="info-item"><span class="info-label">Kend_ID :</span> <span class="info-value" id="kendId">-</span></div>
+            <div class="info-item"><span class="info-label">Plate :</span> <span class="info-value" id="kendPlate">-</span></div>
+            <div class="info-item"><span class="info-label">Type :</span> <span class="info-value" id="kendType">-</span></div>
+            <div class="info-item"><span class="info-label">Tahun :</span> <span class="info-value" id="kendYear">-</span></div>
+        </div>
+    </div>
+
+    <!-- ===== RTAX SECTION ===== -->
+    <div class="detail-section" id="rtaxSection">
+        <div class="section-title">📑 Roadtax</div>
+        <div class="image-box" id="rtaxImageBox" onclick="toggleFullscreen('rtax')">
+            <span class="placeholder" id="rtaxPlaceholder">📑</span>
+            <span class="tap-hint">👆 Tap full screen</span>
+        </div>
+        <div class="info-grid" id="rtaxInfo">
+            <div class="info-item"><span class="info-label">Rtax_ID :</span> <span class="info-value" id="rtaxId">-</span></div>
+            <div class="info-item"><span class="info-label">Rtax_date :</span> <span class="info-value" id="rtaxDate">-</span></div>
+            <div class="info-item"><span class="info-label">Rtax_no :</span> <span class="info-value" id="rtaxNo">-</span></div>
+        </div>
+    </div>
+
+    <!-- ===== INS SECTION ===== -->
+    <div class="detail-section" id="insSection">
+        <div class="section-title">📋 Insurans</div>
+        <div class="image-box" id="insImageBox" onclick="toggleFullscreen('ins')">
+            <span class="placeholder" id="insPlaceholder">📋</span>
+            <span class="tap-hint">👆 Tap full screen</span>
+        </div>
+        <div class="info-grid" id="insInfo">
+            <div class="info-item"><span class="info-label">Ins_ID :</span> <span class="info-value" id="insId">-</span></div>
+            <div class="info-item"><span class="info-label">Ins_date :</span> <span class="info-value" id="insDate">-</span></div>
+            <div class="info-item"><span class="info-label">Ins_no :</span> <span class="info-value" id="insNo">-</span></div>
+        </div>
+    </div>
+
+    <!-- ===== MAINTENANCE BUTTON ===== -->
+    <button class="maint-btn" id="maintBtn" onclick="goToMaint()">
+        🔧 MAINTENANCE →
+    </button>
+
+</div>
+
+<!-- ===== FULLSCREEN OVERLAY ===== -->
+<div class="fullscreen-overlay" id="fullscreenOverlay" onclick="closeFullscreen()">
+    <img id="fullscreenImage" src="" alt="Fullscreen">
+    <span class="close-hint">👆 Tap to close</span>
+</div>
+
+<script type="module">
+    import { getAllData, getLatestPerPlate, getDataById } from './firebase-config.js';
+
+    // ===== CHECK LOGIN =====
+    if (!sessionStorage.getItem('icNumber')) {
+        window.location.href = 'login.html';
+    }
+
+    // ===== GET PLATE FROM URL =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const plate = urlParams.get('plate');
+
+    if (!plate) {
+        document.querySelector('.detail-wrapper').innerHTML = `
+            <div style="text-align:center;color:#ff6b6b;padding:40px;">
+                ❌ Tiada plate number dipilih
+            </div>
+        `;
+    }
+
+    // ===== DOM REFS =====
+    const pageTitle = document.getElementById('pageTitle');
+    const kendId = document.getElementById('kendId');
+    const kendPlate = document.getElementById('kendPlate');
+    const kendType = document.getElementById('kendType');
+    const kendYear = document.getElementById('kendYear');
+    const kendImageBox = document.getElementById('kendImageBox');
+    const kendPlaceholder = document.getElementById('kendPlaceholder');
+
+    const rtaxId = document.getElementById('rtaxId');
+    const rtaxDate = document.getElementById('rtaxDate');
+    const rtaxNo = document.getElementById('rtaxNo');
+    const rtaxImageBox = document.getElementById('rtaxImageBox');
+    const rtaxPlaceholder = document.getElementById('rtaxPlaceholder');
+
+    const insId = document.getElementById('insId');
+    const insDate = document.getElementById('insDate');
+    const insNo = document.getElementById('insNo');
+    const insImageBox = document.getElementById('insImageBox');
+    const insPlaceholder = document.getElementById('insPlaceholder');
+
+    const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+    const fullscreenImage = document.getElementById('fullscreenImage');
+    const maintBtn = document.getElementById('maintBtn');
+
+    let currentImageType = '';
+
+    // ===== BACK =====
+    window.goBack = function() {
+        window.location.href = 'users.html';
+    };
+
+    // ===== GO TO MAINTENANCE =====
+    window.goToMaint = function() {
+        window.location.href = `user_maint.html?plate=${encodeURIComponent(plate)}`;
+    };
+
+    // ===== FULLSCREEN =====
+    window.toggleFullscreen = function(type) {
+        let imgElement = null;
+        if (type === 'kend') {
+            imgElement = kendImageBox.querySelector('img');
+        } else if (type === 'rtax') {
+            imgElement = rtaxImageBox.querySelector('img');
+        } else if (type === 'ins') {
+            imgElement = insImageBox.querySelector('img');
+        }
+
+        if (imgElement && imgElement.src) {
+            fullscreenImage.src = imgElement.src;
+            fullscreenOverlay.classList.add('active');
+        }
+    };
+
+    window.closeFullscreen = function() {
+        fullscreenOverlay.classList.remove('active');
+    };
+
+    // ===== LOAD DATA =====
+    async function loadDetail() {
+        pageTitle.textContent = `📄 ${plate}`;
+
+        try {
+            // Get vehicle
+            const vehicles = await getAllData('kend');
+            const vehicle = vehicles.find(v => v.plate_no === plate);
+
+            if (vehicle) {
+                kendId.textContent = vehicle.id || '-';
+                kendPlate.textContent = vehicle.plate_no || '-';
+                kendType.textContent = vehicle.type || '-';
+                kendYear.textContent = vehicle.year || '-';
+
+                if (vehicle.kend_pic) {
+                    kendPlaceholder.innerHTML = `<img src="${vehicle.kend_pic}" alt="Kenderaan">`;
+                }
+            }
+
+            // Get latest rtax
+            const rtaxData = await getLatestPerPlate('rtax', plate);
+            if (rtaxData.length > 0) {
+                const rtax = rtaxData[0];
+                rtaxId.textContent = rtax.id || '-';
+                rtaxDate.textContent = rtax.rtax_date || '-';
+                rtaxNo.textContent = rtax.rtax_no || '-';
+
+                // Check expiry
+                if (rtax.rtax_date) {
+                    const parts = rtax.rtax_date.split('-');
+                    const expiry = new Date(parts[2], parts[1]-1, parts[0]);
+                    const dateEl = document.querySelector('#rtaxInfo .info-item:nth-child(2) .info-value');
+                    if (expiry < new Date()) {
+                        dateEl.className = 'info-value warning';
+                        dateEl.textContent = rtax.rtax_date + ' << expired! >>';
+                    } else {
+                        dateEl.className = 'info-value good';
+                    }
+                }
+
+                if (rtax.rtax_pic) {
+                    rtaxPlaceholder.innerHTML = `<img src="${rtax.rtax_pic}" alt="Roadtax">`;
+                }
+            }
+
+            // Get latest ins
+            const insData = await getLatestPerPlate('ins', plate);
+            if (insData.length > 0) {
+                const ins = insData[0];
+                insId.textContent = ins.id || '-';
+                insDate.textContent = ins.ins_date || '-';
+                insNo.textContent = ins.ins_no || '-';
+
+                // Check expiry
+                if (ins.ins_date) {
+                    const parts = ins.ins_date.split('-');
+                    const expiry = new Date(parts[2], parts[1]-1, parts[0]);
+                    const dateEl = document.querySelector('#insInfo .info-item:nth-child(2) .info-value');
+                    if (expiry < new Date()) {
+                        dateEl.className = 'info-value warning';
+                        dateEl.textContent = ins.ins_date + ' << expired! >>';
+                    } else {
+                        dateEl.className = 'info-value good';
+                    }
+                }
+
+                if (ins.ins_pic && ins.ins_pic.length > 0) {
+                    insPlaceholder.innerHTML = `<img src="${ins.ins_pic[0]}" alt="Insurans">`;
+                }
+            }
+
+        } catch (error) {
+            console.error('Error loading detail:', error);
+        }
+    }
+
+    // ===== INIT =====
+    loadDetail();
+</script>
+
+</body>
+</html>

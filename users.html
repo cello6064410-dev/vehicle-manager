@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Users - Vehicle Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <style>
+        .users-wrapper {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        .users-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 16px;
+        }
+
+        .users-header h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #64c8ff, #ffcc00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        .users-header .back-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.6);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 40px;
+        }
+
+        .users-header .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* ===== USER CARD ===== */
+        .user-card {
+            background: rgba(26, 26, 46, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .user-card:hover {
+            border-color: rgba(255,204,0,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .user-card:active {
+            transform: scale(0.98);
+        }
+
+        .user-card .uc-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            flex-shrink: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+
+        .user-card .uc-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-card .uc-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-card .uc-content .uc-plate {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffcc00;
+        }
+
+        .user-card .uc-content .uc-id {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.25);
+        }
+
+        .user-card .uc-content .uc-type {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 2px;
+        }
+
+        .user-card .uc-content .uc-details {
+            margin-top: 6px;
+        }
+
+        .user-card .uc-content .uc-details .uc-detail {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .user-card .uc-content .uc-details .uc-detail .label {
+            opacity: 0.5;
+        }
+
+        .user-card .uc-content .uc-details .uc-detail .value {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .user-card .uc-content .uc-details .uc-detail .warning {
+            color: #ff6b6b;
+            font-weight: 600;
+            font-size: 0.7rem;
+        }
+
+        .user-card .uc-content .uc-details .uc-cost {
+            font-size: 0.85rem;
+            color: #00e676;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .user-card .uc-content .uc-tap {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.2);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .user-card .uc-content .uc-tap .arrow {
+            transition: transform 0.2s;
+        }
+
+        .user-card:hover .uc-content .uc-tap .arrow {
+            transform: translateX(4px);
+            color: #ffcc00;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,0.2);
+        }
+
+        .empty-state .empty-icon {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .empty-state .empty-text {
+            font-size: 1rem;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .user-card .uc-image {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
+
+            .user-card .uc-content .uc-plate {
+                font-size: 1rem;
+            }
+
+            .user-card {
+                padding: 12px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .users-wrapper {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="users-wrapper">
+
+    <!-- ===== HEADER ===== -->
+    <div class="users-header">
+        <button class="back-btn" onclick="goBack()">← Kembali</button>
+        <h1>👀 Maklumat Kenderaan</h1>
+        <span style="width:70px;"></span>
+    </div>
+
+    <!-- ===== LIST ===== -->
+    <div id="vehicleList">
+        <!-- Akan diisi oleh JavaScript -->
+    </div>
+
+</div>
+
+<script type="module">
+    import { getAllData, getLatestPerPlate, getHistory } from './firebase-config.js';
+
+    // ===== CHECK LOGIN =====
+    if (!sessionStorage.getItem('icNumber')) {
+        window.location.href = 'login.html';
+    }
+
+    // ===== BACK =====
+    window.goBack = function() {
+        window.location.href = 'index.html';
+    };
+
+    // ===== GO TO DETAIL =====
+    window.goToDetail = function(plate) {
+        window.location.href = `user_detail.html?plate=${encodeURIComponent(plate)}`;
+    };
+
+    // ===== LOAD VEHICLES =====
+    async function loadVehicles() {
+        const container = document.getElementById('vehicleList');
+        container.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.2);padding:40px;">⏳ Loading...</div>';
+
+        try {
+            const vehicles = await getAllData('kend');
+
+            if (vehicles.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-icon">🚗</span>
+                        <div class="empty-text">Tiada kenderaan</div>
+                        <div style="font-size:0.8rem;margin-top:4px;">Sila tambah kenderaan di halaman Input</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            const currentYear = new Date().getFullYear();
+
+            for (const vehicle of vehicles) {
+                const plate = vehicle.plate_no || '';
+                const id = vehicle.id || '-';
+
+                // Get latest rtax
+                const rtaxData = await getLatestPerPlate('rtax', plate);
+                const latestRtax = rtaxData.length > 0 ? rtaxData[0] : null;
+
+                // Get latest ins
+                const insData = await getLatestPerPlate('ins', plate);
+                const latestIns = insData.length > 0 ? insData[0] : null;
+
+                // Get maintenance history
+                const maintHistory = await getHistory('maintenance', plate);
+
+                // Calculate yearly cost
+                let yearlyCost = 0;
+                maintHistory.forEach(m => {
+                    if (m.date && m.cost) {
+                        const year = parseInt(m.date.split('-')[2]);
+                        if (year === currentYear) {
+                            yearlyCost += m.cost;
+                        }
+                    }
+                });
+
+                // Check expiry
+                let isExpired = false;
+                let expiryDate = '-';
+                if (latestRtax && latestRtax.rtax_date) {
+                    expiryDate = latestRtax.rtax_date;
+                    const parts = expiryDate.split('-');
+                    const expiry = new Date(parts[2], parts[1]-1, parts[0]);
+                    if (expiry < new Date()) {
+                        isExpired = true;
+                    }
+                } else if (latestIns && latestIns.ins_date) {
+                    expiryDate = latestIns.ins_date;
+                    const parts = expiryDate.split('-');
+                    const expiry = new Date(parts[2], parts[1]-1, parts[0]);
+                    if (expiry < new Date()) {
+                        isExpired = true;
+                    }
+                }
+
+                html += `
+                    <div class="user-card" onclick="goToDetail('${plate}')">
+                        <div class="uc-image">
+                            ${vehicle.kend_pic ? `<img src="${vehicle.kend_pic}" alt="${plate}">` : `🚗`}
+                        </div>
+                        <div class="uc-content">
+                            <div class="uc-plate">${plate}</div>
+                            <div class="uc-id">Kend_ID: ${id}</div>
+                            <div class="uc-type">${vehicle.type || '-'} ${vehicle.year ? `(${vehicle.year})` : ''}</div>
+                            <div class="uc-details">
+                                <div class="uc-detail">
+                                    <span class="label">📅 Rtax/Ins Date :</span>
+                                    <span class="value">${expiryDate}</span>
+                                    ${isExpired ? `<span class="warning">⚠️ Rtax/Ins Has Expired</span>` : ''}
+                                </div>
+                                <div class="uc-detail">
+                                    <span class="label">💰 Maintenance Cost this year :</span>
+                                    <span class="uc-cost">RM ${yearlyCost.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <div class="uc-tap">
+                                👆 Tap for detail <span class="arrow">→</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+
+        } catch (error) {
+            console.error('Error loading vehicles:', error);
+            container.innerHTML = `
+                <div style="text-align:center;color:#ff6b6b;padding:40px;">
+                    ❌ Error loading data<br>
+                    <span style="font-size:0.8rem;">${error.message}</span>
+                </div>
+            `;
+        }
+    }
+
+    // ===== INIT =====
+    loadVehicles();
+</script>
+
+</body>
+</html>

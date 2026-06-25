@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Maintenance - Vehicle Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <style>
+        .maint-wrapper {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        .maint-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 16px;
+        }
+
+        .maint-header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            margin: 0;
+        }
+
+        .maint-header .back-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.6);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 40px;
+        }
+
+        .maint-header .back-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* ===== VEHICLE HEADER ===== */
+        .vehicle-header {
+            background: rgba(26, 26, 46, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.04);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .vehicle-header .vh-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            flex-shrink: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .vehicle-header .vh-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .vehicle-header .vh-plate {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffcc00;
+        }
+
+        /* ===== MAINTENANCE CARD ===== */
+        .maint-card {
+            background: rgba(26, 26, 46, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.2s;
+        }
+
+        .maint-card:hover {
+            border-color: rgba(255,204,0,0.08);
+        }
+
+        .maint-card .mc-id {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.25);
+        }
+
+        .maint-card .mc-date {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+            font-weight: 500;
+        }
+
+        .maint-card .mc-cost {
+            font-size: 1rem;
+            color: #00e676;
+            font-weight: 600;
+        }
+
+        .maint-card .mc-workshop {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .maint-card .mc-meter {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .maint-card .mc-next-meter {
+            font-size: 0.8rem;
+            color: #64c8ff;
+        }
+
+        .maint-card .mc-subject {
+            margin-top: 8px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            border-left: 3px solid rgba(255,204,0,0.2);
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .maint-card .mc-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.04);
+            margin: 8px 0;
+        }
+
+        .maint-card .mc-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-maint {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255,255,255,0.2);
+        }
+
+        .empty-maint .empty-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .vehicle-header .vh-image {
+                width: 48px;
+                height: 48px;
+                font-size: 1.5rem;
+            }
+
+            .vehicle-header .vh-plate {
+                font-size: 1rem;
+            }
+
+            .maint-card {
+                padding: 12px;
+            }
+
+            .maint-card .mc-subject {
+                font-size: 0.8rem;
+                padding: 8px 10px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .maint-wrapper {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="maint-wrapper">
+
+    <!-- ===== HEADER ===== -->
+    <div class="maint-header">
+        <button class="back-btn" onclick="goBack()">← Kembali</button>
+        <h1>🔧 Maintenance</h1>
+        <span style="width:70px;"></span>
+    </div>
+
+    <!-- ===== VEHICLE HEADER ===== -->
+    <div class="vehicle-header" id="vehicleHeader">
+        <div class="vh-image" id="vhImage">🚗</div>
+        <div>
+            <div class="vh-plate" id="vhPlate">-</div>
+            <div style="font-size:0.7rem;color:rgba(255,255,255,0.3);">Senarai maintenance</div>
+        </div>
+    </div>
+
+    <!-- ===== MAINTENANCE LIST ===== -->
+    <div id="maintList">
+        <!-- Akan diisi oleh JavaScript -->
+    </div>
+
+</div>
+
+<script type="module">
+    import { getAllData, getHistory } from './firebase-config.js';
+
+    // ===== CHECK LOGIN =====
+    if (!sessionStorage.getItem('icNumber')) {
+        window.location.href = 'login.html';
+    }
+
+    // ===== GET PLATE FROM URL =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const plate = urlParams.get('plate');
+
+    if (!plate) {
+        document.querySelector('.maint-wrapper').innerHTML = `
+            <div style="text-align:center;color:#ff6b6b;padding:40px;">
+                ❌ Tiada plate number dipilih
+            </div>
+        `;
+    }
+
+    // ===== DOM REFS =====
+    const vhPlate = document.getElementById('vhPlate');
+    const vhImage = document.getElementById('vhImage');
+    const maintList = document.getElementById('maintList');
+
+    // ===== BACK =====
+    window.goBack = function() {
+        window.location.href = `user_detail.html?plate=${encodeURIComponent(plate)}`;
+    };
+
+    // ===== LOAD MAINTENANCE =====
+    async function loadMaintenance() {
+        vhPlate.textContent = plate;
+
+        maintList.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.2);padding:40px;">⏳ Loading...</div>';
+
+        try {
+            // Get vehicle image
+            const vehicles = await getAllData('kend');
+            const vehicle = vehicles.find(v => v.plate_no === plate);
+            if (vehicle && vehicle.kend_pic) {
+                vhImage.innerHTML = `<img src="${vehicle.kend_pic}" alt="${plate}">`;
+            }
+
+            // Get maintenance history
+            const maintHistory = await getHistory('maintenance', plate);
+
+            if (maintHistory.length === 0) {
+                maintList.innerHTML = `
+                    <div class="empty-maint">
+                        <span class="empty-icon">🔧</span>
+                        <div>Tiada rekod maintenance</div>
+                        <div style="font-size:0.8rem;margin-top:4px;">Belum ada servis direkodkan</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            for (const item of maintHistory) {
+                const lastMeter = item.last_meter || '';
+                const nextMeter = lastMeter ? parseInt(lastMeter) + 10000 : '';
+
+                html += `
+                    <div class="maint-card">
+                        <div class="mc-row">
+                            <span class="mc-id">Maint_ID : ${item.id || '-'}</span>
+                            <span class="mc-date">📅 ${item.date || '-'}</span>
+                        </div>
+                        <div class="mc-row" style="margin-top:4px;">
+                            <span class="mc-cost">💰 RM ${(item.cost || 0).toFixed(2)}</span>
+                            <span class="mc-workshop">🏪 ${item.workshop || '-'}</span>
+                        </div>
+                        <div class="mc-row" style="margin-top:2px;">
+                            ${lastMeter ? `<span class="mc-meter">📊 Last_meter : ${lastMeter}</span>` : ''}
+                            ${nextMeter ? `<span class="mc-next-meter">⏭️ Next meter : ${nextMeter}</span>` : ''}
+                        </div>
+                        <div class="mc-divider"></div>
+                        <div class="mc-subject">${item.subject || '-'}</div>
+                    </div>
+                `;
+            }
+
+            maintList.innerHTML = html;
+
+        } catch (error) {
+            console.error('Error loading maintenance:', error);
+            maintList.innerHTML = `
+                <div style="text-align:center;color:#ff6b6b;padding:40px;">
+                    ❌ Error loading data<br>
+                    <span style="font-size:0.8rem;">${error.message}</span>
+                </div>
+            `;
+        }
+    }
+
+    // ===== INIT =====
+    loadMaintenance();
+</script>
+
+</body>
+</html>
