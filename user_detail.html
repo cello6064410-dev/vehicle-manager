@@ -128,6 +128,7 @@
             justify-content: center;
             font-size: 1.5rem;
             color: rgba(255,255,255,0.1);
+            position: relative;
         }
 
         .multi-image-grid .thumb:hover {
@@ -139,17 +140,6 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-
-        .multi-image-grid .thumb .count-badge {
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            font-size: 0.6rem;
-            padding: 2px 8px;
-            border-radius: 10px;
         }
 
         /* ===== INFO GRID ===== */
@@ -220,8 +210,8 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            cursor: pointer;
             flex-direction: column;
+            cursor: pointer;
         }
 
         .fullscreen-overlay.active {
@@ -237,6 +227,7 @@
             overflow: hidden;
             position: relative;
             touch-action: none;
+            cursor: default;
         }
 
         .fullscreen-overlay .fs-image-container img {
@@ -246,6 +237,8 @@
             border-radius: 8px;
             transition: transform 0.1s ease;
             transform-origin: center center;
+            cursor: default;
+            pointer-events: none;
         }
 
         .fullscreen-overlay .fs-close-hint {
@@ -256,6 +249,7 @@
             color: rgba(255,255,255,0.2);
             font-size: 0.8rem;
             pointer-events: none;
+            z-index: 10;
         }
 
         .fullscreen-overlay .fs-counter {
@@ -267,6 +261,8 @@
             background: rgba(0,0,0,0.5);
             padding: 4px 12px;
             border-radius: 20px;
+            pointer-events: none;
+            z-index: 10;
         }
 
         .fullscreen-overlay .fs-nav {
@@ -281,7 +277,7 @@
             border-radius: 50%;
             font-size: 1.2rem;
             cursor: pointer;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
@@ -401,14 +397,14 @@
 </div>
 
 <!-- ===== FULLSCREEN OVERLAY ===== -->
-<div class="fullscreen-overlay" id="fullscreenOverlay" onclick="closeFullscreen(event)">
+<div class="fullscreen-overlay" id="fullscreenOverlay">
     <div class="fs-image-container" id="fsImageContainer">
         <img id="fullscreenImage" src="" alt="Fullscreen">
     </div>
     <button class="fs-nav prev" id="fsPrev" onclick="event.stopPropagation(); navigateFullscreen(-1)">‹</button>
     <button class="fs-nav next" id="fsNext" onclick="event.stopPropagation(); navigateFullscreen(1)">›</button>
     <span class="fs-counter" id="fsCounter">1 / 1</span>
-    <span class="fs-close-hint">👆 Tap to close</span>
+    <span class="fs-close-hint" id="fsCloseHint">👆 Tap to close</span>
 </div>
 
 <script type="module">
@@ -472,7 +468,7 @@
         window.location.href = `user_maint.html?plate=${encodeURIComponent(plate)}`;
     };
 
-    // ===== FULLSCREEN =====
+    // ===== OPEN FULLSCREEN =====
     window.openFullscreen = function(type, index) {
         if (type === 'kend') {
             const img = kendImageBox.querySelector('img');
@@ -531,11 +527,28 @@
         }
     };
 
-    window.closeFullscreen = function(event) {
-        if (event && event.target !== event.currentTarget) return;
+    // ===== CLOSE FULLSCREEN =====
+    window.closeFullscreen = function() {
         fullscreenOverlay.classList.remove('active');
         document.body.style.overflow = '';
     };
+
+    // Close when clicking the overlay background (NOT the image)
+    fullscreenOverlay.addEventListener('click', function(e) {
+        // Only close if clicking the overlay itself or the close hint
+        if (e.target === this || e.target.id === 'fsCloseHint' || e.target.closest('.fs-close-hint')) {
+            fullscreenOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Close with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && fullscreenOverlay.classList.contains('active')) {
+            fullscreenOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
 
     // ===== ZOOM (Pinch to Zoom) =====
     let lastTouchDistance = 0;
