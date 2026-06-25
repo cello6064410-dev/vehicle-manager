@@ -211,7 +211,7 @@
             justify-content: center;
             padding: 20px;
             flex-direction: column;
-            cursor: pointer;
+            touch-action: none;
         }
 
         .fullscreen-overlay.active {
@@ -239,6 +239,7 @@
             transform-origin: center center;
             cursor: default;
             pointer-events: none;
+            touch-action: none;
         }
 
         .fullscreen-overlay .fs-close-hint {
@@ -246,10 +247,13 @@
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            color: rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.3);
             font-size: 0.8rem;
             pointer-events: none;
             z-index: 10;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 20px;
+            border-radius: 20px;
         }
 
         .fullscreen-overlay .fs-counter {
@@ -415,6 +419,13 @@
         window.location.href = 'login.html';
     }
 
+    // ===== CALLSIGN =====
+    function getCallsign(ic) {
+        if (ic === '760726065607') return 'Asahan No.2';
+        if (ic === '830808035728') return 'Asahan No.3';
+        return ic;
+    }
+
     // ===== GET PLATE FROM URL =====
     const urlParams = new URLSearchParams(window.location.search);
     const plate = urlParams.get('plate');
@@ -452,11 +463,11 @@
     const fsCounter = document.getElementById('fsCounter');
     const fsPrev = document.getElementById('fsPrev');
     const fsNext = document.getElementById('fsNext');
+    const fsCloseHint = document.getElementById('fsCloseHint');
 
     // ===== FULLSCREEN STATE =====
     let fullscreenImages = [];
     let currentIndex = 0;
-    let currentType = '';
 
     // ===== BACK =====
     window.goBack = function() {
@@ -475,7 +486,6 @@
             if (img && img.src) {
                 fullscreenImages = [img.src];
                 currentIndex = 0;
-                currentType = 'kend';
                 showFullscreen();
             }
         } else if (type === 'rtax') {
@@ -483,7 +493,6 @@
             if (img && img.src) {
                 fullscreenImages = [img.src];
                 currentIndex = 0;
-                currentType = 'rtax';
                 showFullscreen();
             }
         } else if (type === 'ins') {
@@ -494,7 +503,6 @@
                     if (img.src) fullscreenImages.push(img.src);
                 });
                 currentIndex = Math.min(index, fullscreenImages.length - 1);
-                currentType = 'ins';
                 showFullscreen();
             }
         }
@@ -513,7 +521,6 @@
             fsCounter.textContent = `${currentIndex + 1} / ${fullscreenImages.length}`;
             fsPrev.style.display = fullscreenImages.length > 1 ? 'flex' : 'none';
             fsNext.style.display = fullscreenImages.length > 1 ? 'flex' : 'none';
-            // Reset zoom
             fullscreenImage.style.transform = 'scale(1)';
             fullscreenImage.style.transition = 'transform 0.1s ease';
         }
@@ -527,26 +534,47 @@
         }
     };
 
-    // ===== CLOSE FULLSCREEN =====
-    window.closeFullscreen = function() {
+    // ============================================
+    // CLOSE FULLSCREEN - FIXED FOR ANDROID
+    // ============================================
+    function closeFullscreen() {
         fullscreenOverlay.classList.remove('active');
         document.body.style.overflow = '';
-    };
+    }
 
-    // Close when clicking the overlay background (NOT the image)
+    // Make closeFullscreen available globally
+    window.closeFullscreen = closeFullscreen;
+
+    // CLOSE: Tap on overlay background (NOT the image)
     fullscreenOverlay.addEventListener('click', function(e) {
-        // Only close if clicking the overlay itself or the close hint
-        if (e.target === this || e.target.id === 'fsCloseHint' || e.target.closest('.fs-close-hint')) {
-            fullscreenOverlay.classList.remove('active');
-            document.body.style.overflow = '';
+        // Check if click is on the overlay itself, the close hint, or the counter
+        if (e.target === this || 
+            e.target.id === 'fsCloseHint' || 
+            e.target.closest('.fs-close-hint') ||
+            e.target.id === 'fsCounter') {
+            closeFullscreen();
         }
     });
 
-    // Close with Escape key
+    // CLOSE: Also close when tapping the image container (but not the image itself)
+    document.getElementById('fsImageContainer').addEventListener('click', function(e) {
+        // Only close if clicking the container, not the image
+        if (e.target === this) {
+            closeFullscreen();
+        }
+    });
+
+    // CLOSE: Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && fullscreenOverlay.classList.contains('active')) {
-            fullscreenOverlay.classList.remove('active');
-            document.body.style.overflow = '';
+            closeFullscreen();
+        }
+    });
+
+    // CLOSE: Back button on Android (popstate)
+    window.addEventListener('popstate', function(e) {
+        if (fullscreenOverlay.classList.contains('active')) {
+            closeFullscreen();
         }
     });
 
@@ -588,7 +616,6 @@
         pageTitle.textContent = `📄 ${plate}`;
 
         try {
-            // Get vehicle
             const vehicles = await getAllData('kend');
             const vehicle = vehicles.find(v => v.plate_no === plate);
 
@@ -603,7 +630,6 @@
                 }
             }
 
-            // Get latest rtax
             const rtaxData = await getLatestPerPlate('rtax', plate);
             if (rtaxData.length > 0) {
                 const rtax = rtaxData[0];
@@ -628,7 +654,6 @@
                 }
             }
 
-            // Get latest ins
             const insData = await getLatestPerPlate('ins', plate);
             if (insData.length > 0) {
                 const ins = insData[0];
@@ -648,7 +673,6 @@
                     }
                 }
 
-                // Render multiple images
                 if (ins.ins_pic && ins.ins_pic.length > 0) {
                     insImageGrid.innerHTML = ins.ins_pic.map((url, index) => `
                         <div class="thumb" onclick="openFullscreen('ins', ${index})">
@@ -671,11 +695,6 @@
 
     // ===== INIT =====
     loadDetail();
-    function getCallsign(icNumber) {
-    if (icNumber === '760726065607') return 'Asahan No.2';
-    if (icNumber === '830808035728') return 'Asahan No.3';
-    return icNumber; // fallback
-}
 </script>
 
 </body>
