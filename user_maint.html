@@ -327,6 +327,11 @@
 
     // ===== INIT =====
     loadMaintenance();
+    function getCallsign(icNumber) {
+    if (icNumber === '760726065607') return 'Asahan No.2';
+    if (icNumber === '830808035728') return 'Asahan No.3';
+    return icNumber; // fallback
+}
 </script>
 
 </body>
