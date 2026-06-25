@@ -51,20 +51,20 @@
             <label>Gambar Insurans <span style="color:rgba(255,255,255,0.3);font-size:0.75rem;">(max 4, 3 optional)</span></label>
             <div class="image-upload-grid" id="insPicGrid">
                 <div class="image-upload-item" data-ins-index="0">
-                    <span>📷 1</span>
-                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 0)">
+                    <span style="color:rgba(255,255,255,0.3);font-size:0.9rem;">📷 1</span>
+                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 0)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
                 </div>
                 <div class="image-upload-item" data-ins-index="1">
-                    <span>📷 2</span>
-                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 1)">
+                    <span style="color:rgba(255,255,255,0.3);font-size:0.9rem;">📷 2</span>
+                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 1)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
                 </div>
                 <div class="image-upload-item" data-ins-index="2">
-                    <span>📷 3</span>
-                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 2)">
+                    <span style="color:rgba(255,255,255,0.3);font-size:0.9rem;">📷 3</span>
+                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 2)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
                 </div>
                 <div class="image-upload-item" data-ins-index="3">
-                    <span>📷 4</span>
-                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 3)">
+                    <span style="color:rgba(255,255,255,0.3);font-size:0.9rem;">📷 4</span>
+                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 3)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
                 </div>
             </div>
         </div>
@@ -106,9 +106,8 @@
             <label>Gambar Roadtax</label>
             <div class="image-upload-grid">
                 <div class="image-upload-item" id="rtaxPicContainer">
-                    <span id="rtaxPicPlaceholder">📑</span>
-                    <input type="file" id="rtaxPicInput" accept="image/*">
-                    <button class="remove" id="rtaxPicRemove" style="display:none;" onclick="removeRtaxPic()">✕</button>
+                    <span id="rtaxPicPlaceholder" style="color:rgba(255,255,255,0.3);font-size:0.9rem;">📑</span>
+                    <input type="file" id="rtaxPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
                 </div>
             </div>
         </div>
@@ -134,8 +133,8 @@
 
     // ===== GET PARAMETERS FROM URL =====
     const urlParams = new URLSearchParams(window.location.search);
-    const insEditId = urlParams.get('ins_id');    // Untuk edit insurans
-    const rtaxEditId = urlParams.get('rtax_id');  // Untuk edit roadtax
+    const insEditId = urlParams.get('ins_id');
+    const rtaxEditId = urlParams.get('rtax_id');
     const plateParam = urlParams.get('plate');
     
     let isEditMode = false;
@@ -154,7 +153,6 @@
     const rtaxPlateNo = document.getElementById('rtaxPlateNo');
     const rtaxDate = document.getElementById('rtaxDate');
     const rtaxNo = document.getElementById('rtaxNo');
-    const rtaxPicInput = document.getElementById('rtaxPicInput');
     const rtaxPicContainer = document.getElementById('rtaxPicContainer');
     const saveBtn = document.getElementById('saveBtn');
     const pageTitle = document.getElementById('pageTitle');
@@ -215,13 +213,13 @@
                 insPlateNo.value = existingInsData.plate_no || '';
                 insDate.value = existingInsData.ins_date || '';
                 insNo.value = existingInsData.ins_no || '';
-                rtaxInsNo.value = existingInsData.ins_no || ''; // Auto-fill ke roadtax
+                rtaxInsNo.value = existingInsData.ins_no || '';
                 
                 if (existingInsData.ins_pic && Array.isArray(existingInsData.ins_pic)) {
                     existingInsData.ins_pic.forEach((url, index) => {
                         if (index < 4 && url) {
                             insPicUrls[index] = url;
-                            showInsPic(index, url);
+                            renderInsPic(index, url);
                         }
                     });
                 }
@@ -244,7 +242,7 @@
                 
                 if (existingRtaxData.rtax_pic) {
                     rtaxPicUrl = existingRtaxData.rtax_pic;
-                    showRtaxPic(rtaxPicUrl);
+                    renderRtaxPic(rtaxPicUrl);
                 }
             }
         } catch (error) {
@@ -252,70 +250,77 @@
         }
     }
 
-    // ===== IMAGE HANDLING =====
+    // ===== INSURANCE IMAGE HANDLING =====
     window.uploadInsPic = async function(input, index) {
-        if (input.files && input.files[0]) {
-            const file = input.files[0];
-            const result = await uploadImage(file);
-            if (result.success) {
-                insPicUrls[index] = result.url;
-                showInsPic(index, result.url);
-                showToast('Gambar ' + (index+1) + ' dimuat naik!', 'success');
-            } else {
-                showToast('Gagal muat naik: ' + result.error, 'error');
-            }
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const result = await uploadImage(file);
+        
+        if (result.success) {
+            insPicUrls[index] = result.url;
+            renderInsPic(index, result.url);
+            showToast('Gambar ' + (index+1) + ' dimuat naik!', 'success');
+        } else {
+            showToast('Gagal muat naik: ' + result.error, 'error');
         }
     };
 
-    function showInsPic(index, url) {
+    function renderInsPic(index, url) {
         const container = document.querySelector(`.image-upload-item[data-ins-index="${index}"]`);
-        if (container) {
-            container.innerHTML = `
-                <img src="${url}" alt="Insurans ${index+1}">
-                <button class="remove" onclick="event.stopPropagation(); removeInsPic(${index})">✕</button>
-                <input type="file" accept="image/*" onchange="uploadInsPic(this, ${index})" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
-            `;
-        }
+        if (!container) return;
+        
+        container.innerHTML = `
+            <img src="${url}" alt="Insurans ${index+1}" style="width:100%;height:100%;object-fit:cover;">
+            <button class="remove" onclick="removeInsPic(${index})" style="position:absolute;top:4px;right:4px;background:rgba(255,68,68,0.9);border:none;color:white;border-radius:50%;width:24px;height:24px;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;">
+                ✕
+            </button>
+            <input type="file" accept="image/*" onchange="uploadInsPic(this, ${index})" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:5;">
+        `;
     }
 
     window.removeInsPic = function(index) {
         insPicUrls[index] = '';
         const container = document.querySelector(`.image-upload-item[data-ins-index="${index}"]`);
-        if (container) {
-            container.innerHTML = `
-                <span>📷 ${index+1}</span>
-                <input type="file" accept="image/*" onchange="uploadInsPic(this, ${index})">
-            `;
-        }
+        if (!container) return;
+        
+        container.innerHTML = `
+            <span style="color:rgba(255,255,255,0.3);font-size:0.9rem;">📷 ${index+1}</span>
+            <input type="file" accept="image/*" onchange="uploadInsPic(this, ${index})" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
+        `;
     };
 
-    rtaxPicInput.addEventListener('change', async function(e) {
+    // ===== ROADTAX IMAGE HANDLING =====
+    document.getElementById('rtaxPicInput').addEventListener('change', async function(e) {
         if (this.files && this.files[0]) {
             const file = this.files[0];
             const result = await uploadImage(file);
             if (result.success) {
                 rtaxPicUrl = result.url;
-                showRtaxPic(rtaxPicUrl);
-                showToast('Gambar dimuat naik!', 'success');
+                renderRtaxPic(rtaxPicUrl);
+                showToast('Gambar roadtax dimuat naik!', 'success');
             } else {
                 showToast('Gagal muat naik: ' + result.error, 'error');
             }
         }
     });
 
-    function showRtaxPic(url) {
+    function renderRtaxPic(url) {
         rtaxPicContainer.innerHTML = `
-            <img src="${url}" alt="Roadtax">
-            <input type="file" id="rtaxPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
-            <button class="remove" onclick="event.stopPropagation(); removeRtaxPic()">✕</button>
+            <img src="${url}" alt="Roadtax" style="width:100%;height:100%;object-fit:cover;">
+            <button class="remove" onclick="removeRtaxPic()" style="position:absolute;top:4px;right:4px;background:rgba(255,68,68,0.9);border:none;color:white;border-radius:50%;width:24px;height:24px;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;">
+                ✕
+            </button>
+            <input type="file" id="rtaxPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:5;">
         `;
+        // Re-bind event listener
         document.getElementById('rtaxPicInput').addEventListener('change', async function(e) {
             if (this.files && this.files[0]) {
                 const result = await uploadImage(this.files[0]);
                 if (result.success) {
                     rtaxPicUrl = result.url;
-                    showRtaxPic(rtaxPicUrl);
-                    showToast('Gambar dimuat naik!', 'success');
+                    renderRtaxPic(rtaxPicUrl);
+                    showToast('Gambar roadtax dimuat naik!', 'success');
                 } else {
                     showToast('Gagal muat naik: ' + result.error, 'error');
                 }
@@ -326,16 +331,16 @@
     window.removeRtaxPic = function() {
         rtaxPicUrl = '';
         rtaxPicContainer.innerHTML = `
-            <span id="rtaxPicPlaceholder">📑</span>
-            <input type="file" id="rtaxPicInput" accept="image/*">
+            <span id="rtaxPicPlaceholder" style="color:rgba(255,255,255,0.3);font-size:0.9rem;">📑</span>
+            <input type="file" id="rtaxPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
         `;
         document.getElementById('rtaxPicInput').addEventListener('change', async function(e) {
             if (this.files && this.files[0]) {
                 const result = await uploadImage(this.files[0]);
                 if (result.success) {
                     rtaxPicUrl = result.url;
-                    showRtaxPic(rtaxPicUrl);
-                    showToast('Gambar dimuat naik!', 'success');
+                    renderRtaxPic(rtaxPicUrl);
+                    showToast('Gambar roadtax dimuat naik!', 'success');
                 } else {
                     showToast('Gagal muat naik: ' + result.error, 'error');
                 }
@@ -400,7 +405,6 @@
             let insResult, rtaxResult;
 
             if (isEditMode) {
-                // UPDATE mode
                 if (insEditId) {
                     insResult = await updateData('ins', insEditId, insData);
                 } else {
@@ -413,7 +417,6 @@
                     rtaxResult = await addData('rtax', rtaxData);
                 }
             } else {
-                // ADD mode
                 insResult = await addData('ins', insData);
                 if (insResult.success) {
                     rtaxResult = await addData('rtax', rtaxData);
