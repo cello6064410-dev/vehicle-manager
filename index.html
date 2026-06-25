@@ -81,6 +81,7 @@
 
         .gate-user span {
             color: #ffcc00;
+            font-weight: 600;
         }
 
         /* ===== GATE BUTTONS ===== */
@@ -279,16 +280,32 @@
 </div>
 
 <script>
-    // ===== CHECK LOGIN =====
+    // ============================================
+    // CALLSIGN FUNCTION
+    // ============================================
+    function getCallsign(icNumber) {
+        if (icNumber === '760726065607') return 'Asahan No.2';
+        if (icNumber === '830808035728') return 'Asahan No.3';
+        return icNumber; // fallback
+    }
+
+    // ============================================
+    // CHECK LOGIN
+    // ============================================
     const icNumber = sessionStorage.getItem('icNumber');
     if (!icNumber) {
         window.location.href = 'login.html';
     }
 
-    // Display user
-    document.getElementById('userDisplay').textContent = icNumber;
+    // ============================================
+    // DISPLAY CALLSIGN (BUKAN IC NUMBER)
+    // ============================================
+    const callsign = getCallsign(icNumber);
+    document.getElementById('userDisplay').textContent = callsign;
 
-    // ===== NAVIGATION =====
+    // ============================================
+    // NAVIGATION
+    // ============================================
     function goTo(page) {
         window.location.href = page;
     }
@@ -297,11 +314,6 @@
         sessionStorage.removeItem('icNumber');
         window.location.href = 'login.html';
     }
-    function getCallsign(icNumber) {
-    if (icNumber === '760726065607') return 'Asahan No.2';
-    if (icNumber === '830808035728') return 'Asahan No.3';
-    return icNumber; // fallback
-}
 </script>
 
 </body>
