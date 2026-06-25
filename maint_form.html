@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Maintenance - Vehicle Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="page-header">
+    <button class="back-btn" onclick="goBack()">← Kembali</button>
+    <h1 id="pageTitle">🔧 Maintenance</h1>
+    <span style="width:44px;"></span>
+</div>
+
+<!-- ===== FORM ===== -->
+<div class="form-container">
+    <div class="form-title" id="formTitle">📝 Maklumat Maintenance</div>
+    
+    <div class="form-group">
+        <label>Maint_ID <span style="color:rgba(255,255,255,0.3);font-size:0.75rem;">(auto)</span></label>
+        <input type="text" id="maintId" disabled placeholder="Auto generated">
+    </div>
+    
+    <div class="form-group">
+        <label>No. Pendaftaran <span class="required">*</span></label>
+        <select id="plateNo" required style="color:#ffffff; background:rgba(255,255,255,0.08);">
+            <option value="" style="background:#1a1a2e;color:#ffffff;">Pilih Kenderaan</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>Tarikh <span class="required">*</span></label>
+        <input type="text" id="maintDate" placeholder="DD-MM-YYYY (contoh: 23-07-2026)" required>
+        <div class="hint">Format: Hari-Bulan-Tahun (contoh: 23-07-2026)</div>
+    </div>
+    
+    <div class="form-group">
+        <label>Subjek <span class="required">*</span></label>
+        <input type="text" id="subject" placeholder="Contoh: Tukar minyak hitam, Servis, dll" required>
+        <div class="hint">Taipkan apa-apa subjek maintenance</div>
+    </div>
+    
+    <div class="form-group">
+        <label>Kos (RM) <span class="required">*</span></label>
+        <input type="number" id="cost" placeholder="0.00" step="0.01" min="0" required>
+        <div class="hint">Format: 250.00</div>
+    </div>
+    
+    <div class="form-group">
+        <label>Bengkel / Workshop</label>
+        <input type="text" id="workshop" placeholder="Contoh: Tan Lien Motor">
+    </div>
+    
+    <div class="form-group">
+        <label>Bacaan Meter Terkini (km)</label>
+        <input type="number" id="lastMeter" placeholder="Contoh: 332541" step="1" min="0">
+        <div class="hint">Optional - untuk kiraan servis seterusnya</div>
+    </div>
+    
+    <button class="btn-save" id="saveBtn" onclick="saveData()">💾 SAVE</button>
+    <button class="btn-reset" onclick="resetForm()">🔄 Reset</button>
+</div>
+
+<script type="module">
+    import { 
+        getDataById, 
+        getAllData,
+        addData, 
+        updateData
+    } from './firebase-config.js';
+
+    // ===== CHECK LOGIN =====
+    if (!sessionStorage.getItem('icNumber')) {
+        window.location.href = 'login.html';
+    }
+
+    // ===== GET ID FROM URL =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('id');
+    const plateParam = urlParams.get('plate');
+    let isEditMode = false;
+    let existingData = null;
+
+    // ===== DOM REFS =====
+    const maintIdInput = document.getElementById('maintId');
+    const plateNoSelect = document.getElementById('plateNo');
+    const maintDateInput = document.getElementById('maintDate');
+    const subjectInput = document.getElementById('subject');
+    const costInput = document.getElementById('cost');
+    const workshopInput = document.getElementById('workshop');
+    const lastMeterInput = document.getElementById('lastMeter');
+    const saveBtn = document.getElementById('saveBtn');
+    const pageTitle = document.getElementById('pageTitle');
+    const formTitle = document.getElementById('formTitle');
+
+    // ===== LOAD VEHICLES FOR DROPDOWN =====
+    async function loadVehicles() {
+        try {
+            console.log('⏳ Loading vehicles...');
+            const vehicles = await getAllData('kend');
+            console.log('✅ Vehicles loaded:', vehicles);
+            
+            const select = plateNoSelect;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="" style="background:#1a1a2e;color:#ffffff;">Pilih Kenderaan</option>';
+            
+            if (vehicles.length === 0) {
+                console.warn('⚠️ No vehicles found');
+                select.innerHTML = '<option value="" style="background:#1a1a2e;color:#ffffff;">Tiada kenderaan - Tambah dulu</option>';
+                return;
+            }
+            
+            vehicles.forEach(v => {
+                const option = document.createElement('option');
+                option.value = v.plate_no || '';
+                option.textContent = `${v.plate_no || 'N/A'} - ${v.type || 'Unknown'}`;
+                option.style.cssText = 'background:#1a1a2e;color:#ffffff;';
+                select.appendChild(option);
+            });
+            
+            if (plateParam) {
+                select.value = plateParam;
+            } else if (currentVal) {
+                select.value = currentVal;
+            }
+            
+            console.log('✅ Dropdown populated with', vehicles.length, 'vehicles');
+        } catch (error) {
+            console.error('❌ Error loading vehicles:', error);
+            showToast('Gagal load kenderaan: ' + error.message, 'error');
+        }
+    }
+
+    // ===== LOAD DATA IF EDIT MODE =====
+    if (editId) {
+        isEditMode = true;
+        pageTitle.textContent = '✏️ Edit Maintenance';
+        formTitle.textContent = '✏️ Edit Maklumat Maintenance';
+        saveBtn.textContent = '💾 UPDATE';
+        loadData(editId);
+    }
+
+    async function loadData(id) {
+        try {
+            const result = await getDataById('maintenance', id);
+            if (result.success) {
+                existingData = result.data;
+                maintIdInput.value = id;
+                plateNoSelect.value = existingData.plate_no || '';
+                maintDateInput.value = existingData.date || '';
+                subjectInput.value = existingData.subject || '';
+                costInput.value = existingData.cost || '';
+                workshopInput.value = existingData.workshop || '';
+                lastMeterInput.value = existingData.last_meter || '';
+            } else {
+                showToast('Data tidak dijumpai', 'error');
+                setTimeout(() => window.location.href = 'input_frontpage.html', 1500);
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+        }
+    }
+
+    // ===== SAVE =====
+    window.saveData = async function() {
+        const plate = plateNoSelect.value;
+        const date = maintDateInput.value.trim();
+        const subject = subjectInput.value.trim();
+        const cost = parseFloat(costInput.value);
+        const workshop = workshopInput.value.trim();
+        const lastMeter = lastMeterInput.value.trim() ? parseInt(lastMeterInput.value) : null;
+
+        // Validation
+        if (!plate) {
+            showToast('Sila pilih No. Pendaftaran!', 'error');
+            plateNoSelect.focus();
+            return;
+        }
+        if (!date) {
+            showToast('Sila masukkan Tarikh!', 'error');
+            maintDateInput.focus();
+            return;
+        }
+        if (!subject) {
+            showToast('Sila masukkan Subjek!', 'error');
+            subjectInput.focus();
+            return;
+        }
+        if (isNaN(cost) || cost < 0) {
+            showToast('Sila masukkan Kos yang sah!', 'error');
+            costInput.focus();
+            return;
+        }
+
+        // Validate date format DD-MM-YYYY
+        const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
+        if (!dateRegex.test(date)) {
+            showToast('Format tarikh salah! Guna DD-MM-YYYY', 'error');
+            maintDateInput.focus();
+            return;
+        }
+
+        const data = {
+            plate_no: plate,
+            date: date,
+            subject: subject,
+            cost: cost,
+            workshop: workshop || '',
+            last_meter: lastMeter
+        };
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = '⏳ Menyimpan...';
+
+        try {
+            let result;
+            if (isEditMode && editId) {
+                result = await updateData('maintenance', editId, data);
+                if (result.success) {
+                    showToast('Maintenance berjaya dikemaskini!', 'success');
+                }
+            } else {
+                result = await addData('maintenance', data);
+                if (result.success) {
+                    showToast('Maintenance berjaya ditambah!', 'success');
+                }
+            }
+
+            if (result && result.success) {
+                setTimeout(() => {
+                    window.location.href = 'input_frontpage.html';
+                }, 1000);
+            } else {
+                showToast('Gagal: ' + (result?.error || 'Unknown error'), 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = isEditMode ? '💾 UPDATE' : '💾 SAVE';
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = isEditMode ? '💾 UPDATE' : '💾 SAVE';
+        }
+    };
+
+    // ===== RESET =====
+    window.resetForm = function() {
+        if (isEditMode) {
+            if (!confirm('Reset form? Data yang belum disimpan akan hilang.')) return;
+            loadData(editId);
+        } else {
+            plateNoSelect.value = '';
+            maintDateInput.value = '';
+            subjectInput.value = '';
+            costInput.value = '';
+            workshopInput.value = '';
+            lastMeterInput.value = '';
+            showToast('Form telah direset', 'success');
+        }
+    };
+
+    // ===== BACK =====
+    window.goBack = function() {
+        window.location.href = 'input_frontpage.html';
+    };
+
+    // ===== TOAST =====
+    function showToast(message, type = 'success') {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ===== INIT =====
+    loadVehicles();
+</script>
+
+</body>
+</html>
