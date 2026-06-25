@@ -8,6 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a2e">
     <style>
+        /* ===== ALL EXISTING STYLES SAME AS BEFORE ===== */
         .detail-wrapper {
             min-height: 100vh;
             background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
@@ -206,13 +207,14 @@
             justify-content: center;
             padding: 20px;
             flex-direction: column;
+            cursor: pointer;
         }
 
         .fullscreen-overlay.active {
             display: flex;
         }
 
-        .fullscreen-overlay .fs-image-container {
+        .fullscreen-overlay .fs-image-wrapper {
             width: 100%;
             height: 100%;
             display: flex;
@@ -221,18 +223,20 @@
             overflow: hidden;
             position: relative;
             touch-action: none;
+            cursor: default;
         }
 
-        .fullscreen-overlay .fs-image-container img {
+        .fullscreen-overlay .fs-image-wrapper img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
             border-radius: 8px;
-            transform-origin: center center;
-            will-change: transform;
+            transform: scale(1);
+            transition: transform 0.05s ease;
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .fullscreen-overlay .fs-close-hint {
@@ -242,11 +246,11 @@
             transform: translateX(-50%);
             color: rgba(255,255,255,0.3);
             font-size: 0.8rem;
-            z-index: 10;
             background: rgba(0,0,0,0.4);
             padding: 8px 20px;
             border-radius: 20px;
             pointer-events: none;
+            z-index: 10;
         }
 
         .fullscreen-overlay .fs-counter {
@@ -258,8 +262,8 @@
             background: rgba(0,0,0,0.5);
             padding: 4px 12px;
             border-radius: 20px;
-            z-index: 10;
             pointer-events: none;
+            z-index: 10;
         }
 
         .fullscreen-overlay .fs-nav {
@@ -381,8 +385,9 @@
 
 </div>
 
+<!-- ===== FULLSCREEN OVERLAY ===== -->
 <div class="fullscreen-overlay" id="fullscreenOverlay">
-    <div class="fs-image-container" id="fsImageContainer">
+    <div class="fs-image-wrapper" id="fsImageWrapper">
         <img id="fullscreenImage" src="" alt="Fullscreen">
     </div>
     <button class="fs-nav prev" id="fsPrev" onclick="event.stopPropagation(); navigateFullscreen(-1)">‹</button>
@@ -394,6 +399,9 @@
 <script type="module">
     import { getAllData, getLatestPerPlate } from './firebase-config.js';
 
+    // ============================================
+    // CHECK LOGIN & CALLSIGN
+    // ============================================
     if (!sessionStorage.getItem('icNumber')) {
         window.location.href = 'login.html';
     }
@@ -404,6 +412,9 @@
         return ic;
     }
 
+    // ============================================
+    // GET PLATE FROM URL
+    // ============================================
     const urlParams = new URLSearchParams(window.location.search);
     const plate = urlParams.get('plate');
 
@@ -415,7 +426,9 @@
         `;
     }
 
+    // ============================================
     // DOM REFS
+    // ============================================
     const pageTitle = document.getElementById('pageTitle');
     const kendId = document.getElementById('kendId');
     const kendPlate = document.getElementById('kendPlate');
@@ -433,13 +446,23 @@
 
     const fullscreenOverlay = document.getElementById('fullscreenOverlay');
     const fullscreenImage = document.getElementById('fullscreenImage');
+    const fsImageWrapper = document.getElementById('fsImageWrapper');
     const fsCounter = document.getElementById('fsCounter');
     const fsPrev = document.getElementById('fsPrev');
     const fsNext = document.getElementById('fsNext');
+    const fsCloseHint = document.getElementById('fsCloseHint');
 
+    // ============================================
+    // FULLSCREEN STATE
+    // ============================================
     let fullscreenImages = [];
     let currentIndex = 0;
+    let currentScale = 1;
+    let isZooming = false;
 
+    // ============================================
+    // NAVIGATION
+    // ============================================
     window.goBack = function() {
         window.location.href = 'users.html';
     };
@@ -448,7 +471,9 @@
         window.location.href = `user_maint.html?plate=${encodeURIComponent(plate)}`;
     };
 
-    // ===== OPEN FULLSCREEN =====
+    // ============================================
+    // OPEN FULLSCREEN
+    // ============================================
     window.openFullscreen = function(type, index) {
         if (type === 'kend') {
             const img = document.querySelector('#kendImageBox img');
@@ -482,7 +507,6 @@
         updateFullscreenImage();
         fullscreenOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
-        // Reset zoom
         currentScale = 1;
         fullscreenImage.style.transform = 'scale(1)';
     }
@@ -507,7 +531,7 @@
     };
 
     // ============================================
-    // CLOSE FULLSCREEN - Tap on background
+    // CLOSE FULLSCREEN - SIMPLE TAP
     // ============================================
     function closeFullscreen() {
         fullscreenOverlay.classList.remove('active');
@@ -517,10 +541,14 @@
 
     window.closeFullscreen = closeFullscreen;
 
-    // Close when tapping the overlay background (NOT the image)
+    // Close: Tap on overlay background, close hint, or wrapper
     fullscreenOverlay.addEventListener('click', function(e) {
-        // Only close if clicking the overlay itself or the close hint
-        if (e.target === this || e.target.id === 'fsCloseHint' || e.target.closest('.fs-close-hint')) {
+        // Close if clicking the overlay itself, close hint, or the wrapper (but not the image)
+        if (e.target === this || 
+            e.target.id === 'fsCloseHint' || 
+            e.target.closest('.fs-close-hint') ||
+            e.target.id === 'fsImageWrapper' ||
+            e.target === fsImageWrapper) {
             closeFullscreen();
         }
     });
@@ -540,40 +568,33 @@
     });
 
     // ============================================
-    // ZOOM - Pinch to Zoom (FIXED)
+    // ZOOM - SIMPLE PINCH
     // ============================================
-    let currentScale = 1;
-    let lastTouchDistance = 0;
-    let initialScale = 1;
+    let lastDistance = 0;
+    let initialPinchScale = 1;
 
-    // Touch start - detect two fingers
+    // Touch start
     fullscreenImage.addEventListener('touchstart', function(e) {
         if (e.touches.length === 2) {
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
-            lastTouchDistance = Math.hypot(
-                touch1.clientX - touch2.clientX,
-                touch1.clientY - touch2.clientY
-            );
-            initialScale = currentScale;
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            lastDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            initialPinchScale = currentScale;
+            isZooming = true;
         }
     }, { passive: true });
 
-    // Touch move - pinch to zoom
+    // Touch move
     fullscreenImage.addEventListener('touchmove', function(e) {
         if (e.touches.length === 2) {
             e.preventDefault();
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const distance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
             
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
-            const distance = Math.hypot(
-                touch1.clientX - touch2.clientX,
-                touch1.clientY - touch2.clientY
-            );
-            
-            if (lastTouchDistance > 0) {
-                const scaleFactor = distance / lastTouchDistance;
-                let newScale = Math.max(0.5, Math.min(3, initialScale * scaleFactor));
+            if (lastDistance > 0) {
+                const ratio = distance / lastDistance;
+                let newScale = Math.max(0.5, Math.min(3, initialPinchScale * ratio));
                 currentScale = newScale;
                 fullscreenImage.style.transform = `scale(${newScale})`;
                 fullscreenImage.style.transition = 'none';
@@ -581,27 +602,11 @@
         }
     }, { passive: false });
 
-    // Touch end - reset detection
+    // Touch end
     fullscreenImage.addEventListener('touchend', function(e) {
-        lastTouchDistance = 0;
+        lastDistance = 0;
+        isZooming = false;
     }, { passive: true });
-
-    // Also support mouse wheel zoom (for desktop)
-    fullscreenImage.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        let newScale = Math.max(0.5, Math.min(3, currentScale + delta));
-        currentScale = newScale;
-        fullscreenImage.style.transform = `scale(${newScale})`;
-        fullscreenImage.style.transition = 'transform 0.1s ease';
-    }, { passive: false });
-
-    // Double tap to reset zoom
-    fullscreenImage.addEventListener('dblclick', function(e) {
-        currentScale = 1;
-        fullscreenImage.style.transform = 'scale(1)';
-        fullscreenImage.style.transition = 'transform 0.3s ease';
-    });
 
     // ============================================
     // LOAD DATA
