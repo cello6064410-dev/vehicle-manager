@@ -98,17 +98,21 @@
                                         <span class="value">${latestMaint ? latestMaint.date : '-'}</span>
                                     </div>
                                 </div>
-                                <div class="card-actions">
-                                    <button class="btn btn-history" onclick="event.stopPropagation(); window.location.href='history.html?plate=${encodeURIComponent(plate)}'">
-                                        📊 History
-                                    </button>
-                                    <button class="btn btn-edit" onclick="event.stopPropagation(); window.location.href='kend_form.html?id=${vehicle.id}'">
-                                        ✏️ Edit
-                                    </button>
-                                    <button class="btn btn-delete" onclick="event.stopPropagation(); deleteVehicle('${vehicle.id}')">
-                                        🗑️
-                                    </button>
-                                </div>
+                                    <div class="card-actions">
+                                        <button class="btn btn-history" onclick="event.stopPropagation(); window.location.href='history.html?plate=${encodeURIComponent(plate)}'">
+                                            📊 History
+                                        </button>
+                                        <button class="btn btn-edit" onclick="event.stopPropagation(); window.location.href='kend_form.html?id=${vehicle.id}'">
+                                            ✏️ Edit Vehicle
+                                        </button>
+                                        <button class="btn btn-ins" onclick="event.stopPropagation(); window.location.href='ins_rtax_form.html?plate=${encodeURIComponent(plate)}'">
+                                            📄 Edit Ins & Rtax
+                                        </button>
+                                        <button class="btn btn-delete" onclick="event.stopPropagation(); deleteVehicle('${vehicle.id}')">
+                                            🗑️
+                                        </button>
+                                    </div>
+
                             </div>
                         </div>
                     </div>

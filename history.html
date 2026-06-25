@@ -68,27 +68,33 @@
             if (insHistory.length > 0) {
                 html += `<h3 style="color:#64c8ff;margin:16px 0 8px;">📋 Insurans</h3>`;
                 insHistory.forEach(item => {
-                    html += `
-                        <div class="history-item">
-                            <div class="date">📅 ${item.ins_date || '-'}</div>
-                            <div class="info">No. Insurans: ${item.ins_no || '-'}</div>
-                            <div class="info" style="font-size:0.7rem;color:rgba(255,255,255,0.3);">ID: ${item.id}</div>
-                        </div>
-                    `;
-                });
+    html += `
+        <div class="history-item">
+            <div class="date">📅 ${item.ins_date || '-'}</div>
+            <div class="info">No. Insurans: ${item.ins_no || '-'}</div>
+            <div class="info" style="font-size:0.7rem;color:rgba(255,255,255,0.3);">ID: ${item.id}</div>
+            <button class="btn btn-edit" onclick="window.location.href='ins_rtax_form.html?ins_id=${item.id}'">
+                ✏️ Edit Ins & Rtax
+            </button>
+        </div>
+    `;
+});
             }
 
             if (rtaxHistory.length > 0) {
                 html += `<h3 style="color:#ffcc00;margin:16px 0 8px;">📑 Roadtax</h3>`;
                 rtaxHistory.forEach(item => {
-                    html += `
-                        <div class="history-item">
-                            <div class="date">📅 ${item.rtax_date || '-'}</div>
-                            <div class="info">No. Roadtax: ${item.rtax_no || '-'}</div>
-                            <div class="info" style="font-size:0.7rem;color:rgba(255,255,255,0.3);">ID: ${item.id}</div>
-                        </div>
-                    `;
-                });
+    html += `
+        <div class="history-item">
+            <div class="date">📅 ${item.rtax_date || '-'}</div>
+            <div class="info">No. Roadtax: ${item.rtax_no || '-'}</div>
+            <div class="info" style="font-size:0.7rem;color:rgba(255,255,255,0.3);">ID: ${item.id}</div>
+            <button class="btn btn-edit" onclick="window.location.href='ins_rtax_form.html?rtax_id=${item.id}'">
+                ✏️ Edit Ins & Rtax
+            </button>
+        </div>
+    `;
+});
             }
 
             if (maintHistory.length > 0) {

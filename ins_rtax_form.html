@@ -13,13 +13,13 @@
 <!-- ===== HEADER ===== -->
 <div class="page-header">
     <button class="back-btn" onclick="goBack()">← Kembali</button>
-    <h1>📄 Insurans & Roadtax</h1>
+    <h1 id="pageTitle">📄 Insurans & Roadtax</h1>
     <span style="width:44px;"></span>
 </div>
 
 <!-- ===== FORM ===== -->
 <div class="form-container">
-    <div class="form-title">📝 Tambah Insurans & Roadtax</div>
+    <div class="form-title" id="formTitle">📝 Tambah / Edit Insurans & Roadtax</div>
     
     <!-- ===== INSURANS SECTION ===== -->
     <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:12px;margin-bottom:16px;">
@@ -32,8 +32,8 @@
         
         <div class="form-group">
             <label>No. Pendaftaran <span class="required">*</span></label>
-            <select id="insPlateNo" required>
-                <option value="">Pilih Kenderaan</option>
+            <select id="insPlateNo" required style="color:#ffffff; background:rgba(255,255,255,0.08);">
+                <option value="" style="background:#1a1a2e;color:#ffffff;">Pilih Kenderaan</option>
             </select>
         </div>
         
@@ -87,8 +87,8 @@
         
         <div class="form-group">
             <label>No. Pendaftaran <span class="required">*</span></label>
-            <select id="rtaxPlateNo" required>
-                <option value="">Pilih Kenderaan</option>
+            <select id="rtaxPlateNo" required style="color:#ffffff; background:rgba(255,255,255,0.08);">
+                <option value="" style="background:#1a1a2e;color:#ffffff;">Pilih Kenderaan</option>
             </select>
         </div>
         
@@ -114,14 +114,16 @@
         </div>
     </div>
     
-    <button class="btn-save" id="saveBtn" onclick="saveData()">💾 SAVE ALL</button>
+    <button class="btn-save" id="saveBtn" onclick="saveData()">💾 SAVE</button>
     <button class="btn-reset" onclick="resetForm()">🔄 Reset</button>
 </div>
 
 <script type="module">
     import { 
+        getDataById,
         getAllData,
         addData, 
+        updateData,
         uploadImage,
     } from './firebase-config.js';
 
@@ -130,10 +132,24 @@
         window.location.href = 'login.html';
     }
 
+    // ===== GET PARAMETERS FROM URL =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const insEditId = urlParams.get('ins_id');    // Untuk edit insurans
+    const rtaxEditId = urlParams.get('rtax_id');  // Untuk edit roadtax
+    const plateParam = urlParams.get('plate');
+    
+    let isEditMode = false;
+    let existingInsData = null;
+    let existingRtaxData = null;
+    let insPicUrls = ['', '', '', ''];
+    let rtaxPicUrl = '';
+
     // ===== DOM REFS =====
+    const insIdInput = document.getElementById('insId');
     const insPlateNo = document.getElementById('insPlateNo');
     const insDate = document.getElementById('insDate');
     const insNo = document.getElementById('insNo');
+    const rtaxIdInput = document.getElementById('rtaxId');
     const rtaxInsNo = document.getElementById('rtaxInsNo');
     const rtaxPlateNo = document.getElementById('rtaxPlateNo');
     const rtaxDate = document.getElementById('rtaxDate');
@@ -141,19 +157,8 @@
     const rtaxPicInput = document.getElementById('rtaxPicInput');
     const rtaxPicContainer = document.getElementById('rtaxPicContainer');
     const saveBtn = document.getElementById('saveBtn');
-
-    let insPicUrls = ['', '', '', ''];
-    let rtaxPicUrl = '';
-
-    // ===== AUTO-FILL INSNO =====
-    insNo.addEventListener('input', function() {
-        rtaxInsNo.value = this.value;
-    });
-
-    // ===== AUTO-FILL PLATE =====
-    insPlateNo.addEventListener('change', function() {
-        rtaxPlateNo.value = this.value;
-    });
+    const pageTitle = document.getElementById('pageTitle');
+    const formTitle = document.getElementById('formTitle');
 
     // ===== LOAD VEHICLES =====
     async function loadVehicles() {
@@ -162,17 +167,88 @@
             
             [insPlateNo, rtaxPlateNo].forEach(select => {
                 const currentVal = select.value;
-                select.innerHTML = '<option value="">Pilih Kenderaan</option>';
+                select.innerHTML = '<option value="" style="background:#1a1a2e;color:#ffffff;">Pilih Kenderaan</option>';
                 vehicles.forEach(v => {
                     const option = document.createElement('option');
                     option.value = v.plate_no || '';
                     option.textContent = `${v.plate_no || 'N/A'} - ${v.type || 'Unknown'}`;
+                    option.style.cssText = 'background:#1a1a2e;color:#ffffff;';
                     select.appendChild(option);
                 });
-                if (currentVal) select.value = currentVal;
+                if (plateParam) {
+                    select.value = plateParam;
+                } else if (currentVal) {
+                    select.value = currentVal;
+                }
             });
         } catch (error) {
             console.error('Error loading vehicles:', error);
+        }
+    }
+
+    // ===== AUTO-FILL =====
+    insNo.addEventListener('input', function() {
+        rtaxInsNo.value = this.value;
+    });
+
+    insPlateNo.addEventListener('change', function() {
+        rtaxPlateNo.value = this.value;
+    });
+
+    // ===== LOAD DATA FOR EDIT =====
+    if (insEditId || rtaxEditId) {
+        isEditMode = true;
+        pageTitle.textContent = '✏️ Edit Insurans & Roadtax';
+        formTitle.textContent = '✏️ Edit Insurans & Roadtax';
+        saveBtn.textContent = '💾 UPDATE';
+        
+        if (insEditId) loadInsData(insEditId);
+        if (rtaxEditId) loadRtaxData(rtaxEditId);
+    }
+
+    async function loadInsData(id) {
+        try {
+            const result = await getDataById('ins', id);
+            if (result.success) {
+                existingInsData = result.data;
+                insIdInput.value = id;
+                insPlateNo.value = existingInsData.plate_no || '';
+                insDate.value = existingInsData.ins_date || '';
+                insNo.value = existingInsData.ins_no || '';
+                rtaxInsNo.value = existingInsData.ins_no || ''; // Auto-fill ke roadtax
+                
+                if (existingInsData.ins_pic && Array.isArray(existingInsData.ins_pic)) {
+                    existingInsData.ins_pic.forEach((url, index) => {
+                        if (index < 4 && url) {
+                            insPicUrls[index] = url;
+                            showInsPic(index, url);
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            showToast('Error loading insurans: ' + error.message, 'error');
+        }
+    }
+
+    async function loadRtaxData(id) {
+        try {
+            const result = await getDataById('rtax', id);
+            if (result.success) {
+                existingRtaxData = result.data;
+                rtaxIdInput.value = id;
+                rtaxInsNo.value = existingRtaxData.ins_no || '';
+                rtaxPlateNo.value = existingRtaxData.plate_no || '';
+                rtaxDate.value = existingRtaxData.rtax_date || '';
+                rtaxNo.value = existingRtaxData.rtax_no || '';
+                
+                if (existingRtaxData.rtax_pic) {
+                    rtaxPicUrl = existingRtaxData.rtax_pic;
+                    showRtaxPic(rtaxPicUrl);
+                }
+            }
+        } catch (error) {
+            showToast('Error loading roadtax: ' + error.message, 'error');
         }
     }
 
@@ -183,20 +259,24 @@
             const result = await uploadImage(file);
             if (result.success) {
                 insPicUrls[index] = result.url;
-                const container = document.querySelector(`.image-upload-item[data-ins-index="${index}"]`);
-                if (container) {
-                    container.innerHTML = `
-                        <img src="${result.url}" alt="Insurans ${index+1}">
-                        <button class="remove" onclick="event.stopPropagation(); removeInsPic(${index})">✕</button>
-                        <input type="file" accept="image/*" onchange="uploadInsPic(this, ${index})" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
-                    `;
-                }
+                showInsPic(index, result.url);
                 showToast('Gambar ' + (index+1) + ' dimuat naik!', 'success');
             } else {
                 showToast('Gagal muat naik: ' + result.error, 'error');
             }
         }
     };
+
+    function showInsPic(index, url) {
+        const container = document.querySelector(`.image-upload-item[data-ins-index="${index}"]`);
+        if (container) {
+            container.innerHTML = `
+                <img src="${url}" alt="Insurans ${index+1}">
+                <button class="remove" onclick="event.stopPropagation(); removeInsPic(${index})">✕</button>
+                <input type="file" accept="image/*" onchange="uploadInsPic(this, ${index})" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
+            `;
+        }
+    }
 
     window.removeInsPic = function(index) {
         insPicUrls[index] = '';
@@ -215,17 +295,33 @@
             const result = await uploadImage(file);
             if (result.success) {
                 rtaxPicUrl = result.url;
-                rtaxPicContainer.innerHTML = `
-                    <img src="${result.url}" alt="Roadtax">
-                    <input type="file" id="rtaxPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
-                    <button class="remove" onclick="event.stopPropagation(); removeRtaxPic()">✕</button>
-                `;
+                showRtaxPic(rtaxPicUrl);
                 showToast('Gambar dimuat naik!', 'success');
             } else {
                 showToast('Gagal muat naik: ' + result.error, 'error');
             }
         }
     });
+
+    function showRtaxPic(url) {
+        rtaxPicContainer.innerHTML = `
+            <img src="${url}" alt="Roadtax">
+            <input type="file" id="rtaxPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
+            <button class="remove" onclick="event.stopPropagation(); removeRtaxPic()">✕</button>
+        `;
+        document.getElementById('rtaxPicInput').addEventListener('change', async function(e) {
+            if (this.files && this.files[0]) {
+                const result = await uploadImage(this.files[0]);
+                if (result.success) {
+                    rtaxPicUrl = result.url;
+                    showRtaxPic(rtaxPicUrl);
+                    showToast('Gambar dimuat naik!', 'success');
+                } else {
+                    showToast('Gagal muat naik: ' + result.error, 'error');
+                }
+            }
+        });
+    }
 
     window.removeRtaxPic = function() {
         rtaxPicUrl = '';
@@ -238,6 +334,7 @@
                 const result = await uploadImage(this.files[0]);
                 if (result.success) {
                     rtaxPicUrl = result.url;
+                    showRtaxPic(rtaxPicUrl);
                     showToast('Gambar dimuat naik!', 'success');
                 } else {
                     showToast('Gagal muat naik: ' + result.error, 'error');
@@ -276,7 +373,6 @@
             return;
         }
 
-        // Check if ins_no matches
         if (insNoVal !== rtaxInsNoVal) {
             showToast('No. Insurans tidak sama!', 'error');
             return;
@@ -301,54 +397,65 @@
         saveBtn.textContent = '⏳ Menyimpan...';
 
         try {
-            // Save Insurans
-            const insResult = await addData('ins', insData);
-            if (!insResult.success) {
-                showToast('Gagal simpan insurans: ' + insResult.error, 'error');
-                saveBtn.disabled = false;
-                saveBtn.textContent = '💾 SAVE ALL';
-                return;
+            let insResult, rtaxResult;
+
+            if (isEditMode) {
+                // UPDATE mode
+                if (insEditId) {
+                    insResult = await updateData('ins', insEditId, insData);
+                } else {
+                    insResult = await addData('ins', insData);
+                }
+
+                if (rtaxEditId) {
+                    rtaxResult = await updateData('rtax', rtaxEditId, rtaxData);
+                } else {
+                    rtaxResult = await addData('rtax', rtaxData);
+                }
+            } else {
+                // ADD mode
+                insResult = await addData('ins', insData);
+                if (insResult.success) {
+                    rtaxResult = await addData('rtax', rtaxData);
+                }
             }
 
-            // Save Roadtax
-            const rtaxResult = await addData('rtax', rtaxData);
-            if (!rtaxResult.success) {
-                showToast('Gagal simpan roadtax: ' + rtaxResult.error, 'error');
+            if (insResult?.success && rtaxResult?.success) {
+                showToast('✅ Insurans & Roadtax berjaya disimpan!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'input_frontpage.html';
+                }, 1000);
+            } else {
+                showToast('Gagal: ' + (insResult?.error || rtaxResult?.error || 'Unknown error'), 'error');
                 saveBtn.disabled = false;
-                saveBtn.textContent = '💾 SAVE ALL';
-                return;
+                saveBtn.textContent = isEditMode ? '💾 UPDATE' : '💾 SAVE';
             }
-
-            showToast('✅ Insurans & Roadtax berjaya ditambah!', 'success');
-            setTimeout(() => {
-                window.location.href = 'input_frontpage.html';
-            }, 1000);
 
         } catch (error) {
             showToast('Error: ' + error.message, 'error');
             saveBtn.disabled = false;
-            saveBtn.textContent = '💾 SAVE ALL';
+            saveBtn.textContent = isEditMode ? '💾 UPDATE' : '💾 SAVE';
         }
     };
 
     // ===== RESET =====
     window.resetForm = function() {
-        if (!confirm('Reset form? Data yang belum disimpan akan hilang.')) return;
-        
-        insPlateNo.value = '';
-        insDate.value = '';
-        insNo.value = '';
-        rtaxInsNo.value = '';
-        rtaxPlateNo.value = '';
-        rtaxDate.value = '';
-        rtaxNo.value = '';
-        
-        for (let i = 0; i < 4; i++) {
-            removeInsPic(i);
+        if (isEditMode) {
+            if (!confirm('Reset form? Data yang belum disimpan akan hilang.')) return;
+            if (insEditId) loadInsData(insEditId);
+            if (rtaxEditId) loadRtaxData(rtaxEditId);
+        } else {
+            insPlateNo.value = '';
+            insDate.value = '';
+            insNo.value = '';
+            rtaxInsNo.value = '';
+            rtaxPlateNo.value = '';
+            rtaxDate.value = '';
+            rtaxNo.value = '';
+            for (let i = 0; i < 4; i++) removeInsPic(i);
+            removeRtaxPic();
+            showToast('Form telah direset', 'success');
         }
-        removeRtaxPic();
-        
-        showToast('Form telah direset', 'success');
     };
 
     // ===== BACK =====
