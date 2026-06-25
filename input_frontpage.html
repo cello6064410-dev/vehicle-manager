@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Input Data - Vehicle Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="page-header">
+    <button class="back-btn" onclick="goBack()">← Kembali</button>
+    <h1>🚗 Input Data</h1>
+    <span style="width:44px;"></span>
+</div>
+
+<!-- ===== KENDERAAN LIST ===== -->
+<div id="vehicleList" class="card-list">
+    <!-- Akan diisi oleh JavaScript -->
+</div>
+
+<!-- ===== ADD BUTTONS ===== -->
+<div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+    <div class="add-btn primary" onclick="window.location.href='kend_form.html'">
+        <span class="icon">➕</span> Tap to add New Vehicle
+    </div>
+    <div class="add-btn secondary" onclick="window.location.href='ins_rtax_form.html'">
+        <span class="icon">📄</span> Tap to add Insurans & Roadtax
+    </div>
+</div>
+
+<script type="module">
+    import { getAllData, getLatestPerPlate } from './firebase-config.js';
+
+    // ===== CHECK LOGIN =====
+    if (!sessionStorage.getItem('icNumber')) {
+        window.location.href = 'login.html';
+    }
+
+    // ===== LOAD VEHICLES =====
+    async function loadVehicles() {
+        const container = document.getElementById('vehicleList');
+        container.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:30px;">⏳ Loading...</div>';
+
+        try {
+            // Get all kenderaan
+            const vehicles = await getAllData('kend');
+            
+            if (vehicles.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;color:rgba(255,255,255,0.3);padding:30px;">
+                        🚗 Tiada kenderaan.<br>Tambahkan kenderaan baru!
+                    </div>
+                `;
+                return;
+            }
+
+            // For each vehicle, get latest ins, rtax, maintenance
+            let html = '';
+            
+            for (const vehicle of vehicles) {
+                const plate = vehicle.plate_no || '';
+                
+                // Get latest insurans
+                const insData = await getLatestPerPlate('ins', plate);
+                const latestIns = insData.length > 0 ? insData[0] : null;
+                
+                // Get latest roadtax
+                const rtaxData = await getLatestPerPlate('rtax', plate);
+                const latestRtax = rtaxData.length > 0 ? rtaxData[0] : null;
+                
+                // Get latest maintenance
+                const maintData = await getLatestPerPlate('maintenance', plate);
+                const latestMaint = maintData.length > 0 ? maintData[0] : null;
+
+                html += `
+                    <div class="card" onclick="window.location.href='kend_form.html?id=${vehicle.id}'">
+                        <div class="card-vehicle">
+                            <div class="card-image">
+                                ${vehicle.kend_pic ? `<img src="${vehicle.kend_pic}" alt="${plate}">` : `<span class="placeholder">🚗</span>`}
+                            </div>
+                            <div class="card-content">
+                                <div class="plate">${plate}</div>
+                                <div class="kend-id">Kend_ID: ${vehicle.id || '-'}</div>
+                                <div class="type">${vehicle.type || '-'} ${vehicle.year ? `(${vehicle.year})` : ''}</div>
+                                <div class="card-details">
+                                    <div class="detail">
+                                        <span class="label">📅 Ins:</span>
+                                        <span class="value">${latestIns ? latestIns.ins_date : '-'}</span>
+                                    </div>
+                                    <div class="detail">
+                                        <span class="label">📑 Rtax:</span>
+                                        <span class="value">${latestRtax ? latestRtax.rtax_date : '-'}</span>
+                                    </div>
+                                    <div class="detail">
+                                        <span class="label">🔧 Maint:</span>
+                                        <span class="value">${latestMaint ? latestMaint.date : '-'}</span>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="btn btn-history" onclick="event.stopPropagation(); window.location.href='history.html?plate=${encodeURIComponent(plate)}'">
+                                        📊 History
+                                    </button>
+                                    <button class="btn btn-edit" onclick="event.stopPropagation(); window.location.href='kend_form.html?id=${vehicle.id}'">
+                                        ✏️ Edit
+                                    </button>
+                                    <button class="btn btn-delete" onclick="event.stopPropagation(); deleteVehicle('${vehicle.id}')">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+
+        } catch (error) {
+            console.error('Error loading vehicles:', error);
+            container.innerHTML = `
+                <div style="text-align:center;color:#ff4444;padding:30px;">
+                    ❌ Error loading data.<br>${error.message}
+                </div>
+            `;
+        }
+    }
+
+    // ===== DELETE VEHICLE =====
+    window.deleteVehicle = async function(id) {
+        if (!confirm('Padam kenderaan ini? Semua data berkaitan (insurans, roadtax, maintenance) juga akan dipadam.')) return;
+        
+        try {
+            const { deleteData } = await import('./firebase-config.js');
+            const result = await deleteData('kend', id);
+            if (result.success) {
+                showToast('Kenderaan berjaya dipadam!', 'success');
+                loadVehicles();
+            } else {
+                showToast('Gagal memadam: ' + result.error, 'error');
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+        }
+    };
+
+    // ===== TOAST =====
+    function showToast(message, type = 'success') {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ===== BACK =====
+    window.goBack = function() {
+        window.location.href = 'index.html';
+    };
+
+    // ===== INIT =====
+    loadVehicles();
+</script>
+
+</body>
+</html>

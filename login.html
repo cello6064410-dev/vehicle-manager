@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - Vehicle Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-icon">🚗</div>
+        <h1>Vehicle<span>Manager</span></h1>
+        <p class="login-subtitle">Masukkan IC Number untuk akses</p>
+        <div class="login-divider"></div>
+
+        <!-- IC Input -->
+        <div style="margin-bottom: 20px;">
+            <input type="password" id="icInput" placeholder="Masukkan IC Number..." 
+                   style="width:100%; padding:14px; background:#1a1a2e; border:2px solid #2a2a4e; border-radius:12px; color:white; font-size:1.1rem; text-align:center; letter-spacing:2px; font-family: 'Courier New', monospace;">
+        </div>
+
+        <button id="loginBtn" class="login-btn" style="width:100%; padding:14px; background:linear-gradient(135deg,#ffcc00,#ff8800); border:none; border-radius:12px; color:#0f0f0f; font-size:1.1rem; font-weight:bold; cursor:pointer;">
+            🔑 Login
+        </button>
+
+        <div id="loginStatus" class="login-status"></div>
+    </div>
+</div>
+
+<style>
+    .login-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+        padding: 20px;
+    }
+    .login-card {
+        background: rgba(26, 26, 46, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 32px;
+        padding: 50px 45px;
+        max-width: 420px;
+        width: 100%;
+        border: 1px solid rgba(255,255,255,0.06);
+        box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+        text-align: center;
+    }
+    .login-icon { font-size: 4rem; display: block; margin-bottom: 10px; }
+    .login-card h1 {
+        font-size: 2.5rem; font-weight: 800; margin: 0;
+        background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    .login-card h1 span {
+        font-weight: 300;
+        background: linear-gradient(135deg, #ff8800 0%, #ff4400 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .login-subtitle {
+        color: rgba(255,255,255,0.5);
+        font-size: 1rem;
+        margin-top: 6px;
+        font-family: Arial, sans-serif;
+    }
+    .login-divider {
+        width: 60px; height: 3px;
+        background: linear-gradient(90deg, #ffcc00, #ff8800);
+        border-radius: 10px;
+        margin: 25px auto 30px;
+    }
+    .login-btn {
+        transition: transform 0.2s;
+    }
+    .login-btn:hover { transform: scale(1.02); }
+    .login-btn:active { transform: scale(0.97); }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .login-status {
+        margin-top: 16px;
+        padding: 10px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-family: Arial, sans-serif;
+        min-height: 44px;
+    }
+    .login-status.error {
+        background: rgba(255,68,68,0.15);
+        color: #ff4444;
+        border: 1px solid rgba(255,68,68,0.3);
+    }
+    .login-status.success {
+        background: rgba(0,200,83,0.15);
+        color: #00e676;
+        border: 1px solid rgba(0,200,83,0.3);
+    }
+    @media (max-width: 480px) {
+        .login-card { padding: 35px 25px; border-radius: 24px; }
+        .login-card h1 { font-size: 2rem; }
+        .login-icon { font-size: 3rem; }
+    }
+</style>
+
+<script>
+    // ============================================
+    // ALLOWED IC NUMBERS
+    // ============================================
+    const ALLOWED_IC = [
+        '760726065607',  // Kamarul
+        '830808035728'   // Isteri
+    ];
+
+    const icInput = document.getElementById('icInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginStatus = document.getElementById('loginStatus');
+
+    // ============================================
+    // LOGIN FUNCTION
+    // ============================================
+    function login() {
+        const ic = icInput.value.trim().replace(/\s/g, '');
+
+        if (ic === '') {
+            loginStatus.textContent = '⚠️ Sila masukkan IC Number';
+            loginStatus.className = 'login-status error';
+            return;
+        }
+
+        if (ALLOWED_IC.includes(ic)) {
+            loginStatus.textContent = '✅ Login berjaya! Redirecting...';
+            loginStatus.className = 'login-status success';
+            loginBtn.disabled = true;
+
+            // Simpan IC dalam session
+            sessionStorage.setItem('icNumber', ic);
+
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        } else {
+            loginStatus.textContent = '❌ IC Number tidak dikenali';
+            loginStatus.className = 'login-status error';
+            icInput.value = '';
+            icInput.focus();
+        }
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+    loginBtn.addEventListener('click', login);
+
+    icInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            login();
+        }
+    });
+
+    // Auto-focus
+    icInput.focus();
+</script>
+
+</body>
+</html>

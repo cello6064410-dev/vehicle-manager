@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Insurans & Roadtax - Vehicle Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="page-header">
+    <button class="back-btn" onclick="goBack()">← Kembali</button>
+    <h1>📄 Insurans & Roadtax</h1>
+    <span style="width:44px;"></span>
+</div>
+
+<!-- ===== FORM ===== -->
+<div class="form-container">
+    <div class="form-title">📝 Tambah Insurans & Roadtax</div>
+    
+    <!-- ===== INSURANS SECTION ===== -->
+    <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:12px;margin-bottom:16px;">
+        <h3 style="color:#64c8ff;font-size:1rem;margin-bottom:12px;">📋 Insurans</h3>
+        
+        <div class="form-group">
+            <label>Ins_ID <span style="color:rgba(255,255,255,0.3);font-size:0.75rem;">(auto)</span></label>
+            <input type="text" id="insId" disabled placeholder="Auto generated">
+        </div>
+        
+        <div class="form-group">
+            <label>No. Pendaftaran <span class="required">*</span></label>
+            <select id="insPlateNo" required>
+                <option value="">Pilih Kenderaan</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Tarikh Insurans <span class="required">*</span></label>
+            <input type="text" id="insDate" placeholder="DD-MM-YYYY (contoh: 23-07-2026)" required>
+        </div>
+        
+        <div class="form-group">
+            <label>No. Insurans <span class="required">*</span></label>
+            <input type="text" id="insNo" placeholder="Contoh: NS2154POL" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Gambar Insurans <span style="color:rgba(255,255,255,0.3);font-size:0.75rem;">(max 4, 3 optional)</span></label>
+            <div class="image-upload-grid" id="insPicGrid">
+                <div class="image-upload-item" data-ins-index="0">
+                    <span>📷 1</span>
+                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 0)">
+                </div>
+                <div class="image-upload-item" data-ins-index="1">
+                    <span>📷 2</span>
+                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 1)">
+                </div>
+                <div class="image-upload-item" data-ins-index="2">
+                    <span>📷 3</span>
+                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 2)">
+                </div>
+                <div class="image-upload-item" data-ins-index="3">
+                    <span>📷 4</span>
+                    <input type="file" accept="image/*" onchange="uploadInsPic(this, 3)">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== ROADTAX SECTION ===== -->
+    <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:12px;margin-bottom:16px;">
+        <h3 style="color:#ffcc00;font-size:1rem;margin-bottom:12px;">📑 Roadtax</h3>
+        
+        <div class="form-group">
+            <label>Rtax_ID <span style="color:rgba(255,255,255,0.3);font-size:0.75rem;">(auto)</span></label>
+            <input type="text" id="rtaxId" disabled placeholder="Auto generated">
+        </div>
+        
+        <div class="form-group">
+            <label>No. Insurans <span class="required">*</span></label>
+            <input type="text" id="rtaxInsNo" placeholder="Auto-fill dari insurans" required>
+            <div class="hint">Akan auto-fill dari No. Insurans di atas</div>
+        </div>
+        
+        <div class="form-group">
+            <label>No. Pendaftaran <span class="required">*</span></label>
+            <select id="rtaxPlateNo" required>
+                <option value="">Pilih Kenderaan</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Tarikh Roadtax <span class="required">*</span></label>
+            <input type="text" id="rtaxDate" placeholder="DD-MM-YYYY (contoh: 23-07-2026)" required>
+        </div>
+        
+        <div class="form-group">
+            <label>No. Roadtax <span class="required">*</span></label>
+            <input type="text" id="rtaxNo" placeholder="Contoh: QTT21RC235" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Gambar Roadtax</label>
+            <div class="image-upload-grid">
+                <div class="image-upload-item" id="rtaxPicContainer">
+                    <span id="rtaxPicPlaceholder">📑</span>
+                    <input type="file" id="rtaxPicInput" accept="image/*">
+                    <button class="remove" id="rtaxPicRemove" style="display:none;" onclick="removeRtaxPic()">✕</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="btn-save" id="saveBtn" onclick="saveData()">💾 SAVE ALL</button>
+    <button class="btn-reset" onclick="resetForm()">🔄 Reset</button>
+</div>
+
+<script type="module">
+    import { 
+        getAllData,
+        addData, 
+        uploadImage,
+    } from './firebase-config.js';
+
+    // ===== CHECK LOGIN =====
+    if (!sessionStorage.getItem('icNumber')) {
+        window.location.href = 'login.html';
+    }
+
+    // ===== DOM REFS =====
+    const insPlateNo = document.getElementById('insPlateNo');
+    const insDate = document.getElementById('insDate');
+    const insNo = document.getElementById('insNo');
+    const rtaxInsNo = document.getElementById('rtaxInsNo');
+    const rtaxPlateNo = document.getElementById('rtaxPlateNo');
+    const rtaxDate = document.getElementById('rtaxDate');
+    const rtaxNo = document.getElementById('rtaxNo');
+    const rtaxPicInput = document.getElementById('rtaxPicInput');
+    const rtaxPicContainer = document.getElementById('rtaxPicContainer');
+    const saveBtn = document.getElementById('saveBtn');
+
+    let insPicUrls = ['', '', '', ''];
+    let rtaxPicUrl = '';
+
+    // ===== AUTO-FILL INSNO =====
+    insNo.addEventListener('input', function() {
+        rtaxInsNo.value = this.value;
+    });
+
+    // ===== AUTO-FILL PLATE =====
+    insPlateNo.addEventListener('change', function() {
+        rtaxPlateNo.value = this.value;
+    });
+
+    // ===== LOAD VEHICLES =====
+    async function loadVehicles() {
+        try {
+            const vehicles = await getAllData('kend');
+            
+            [insPlateNo, rtaxPlateNo].forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">Pilih Kenderaan</option>';
+                vehicles.forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v.plate_no || '';
+                    option.textContent = `${v.plate_no || 'N/A'} - ${v.type || 'Unknown'}`;
+                    select.appendChild(option);
+                });
+                if (currentVal) select.value = currentVal;
+            });
+        } catch (error) {
+            console.error('Error loading vehicles:', error);
+        }
+    }
+
+    // ===== IMAGE HANDLING =====
+    window.uploadInsPic = async function(input, index) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const result = await uploadImage(file, `ins/${Date.now()}_${index}`);
+            if (result.success) {
+                insPicUrls[index] = result.url;
+                const container = document.querySelector(`.image-upload-item[data-ins-index="${index}"]`);
+                if (container) {
+                    container.innerHTML = `
+                        <img src="${result.url}" alt="Insurans ${index+1}">
+                        <button class="remove" onclick="event.stopPropagation(); removeInsPic(${index})">✕</button>
+                        <input type="file" accept="image/*" onchange="uploadInsPic(this, ${index})" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
+                    `;
+                }
+                showToast('Gambar ' + (index+1) + ' dimuat naik!', 'success');
+            } else {
+                showToast('Gagal muat naik: ' + result.error, 'error');
+            }
+        }
+    };
+
+    window.removeInsPic = function(index) {
+        insPicUrls[index] = '';
+        const container = document.querySelector(`.image-upload-item[data-ins-index="${index}"]`);
+        if (container) {
+            container.innerHTML = `
+                <span>📷 ${index+1}</span>
+                <input type="file" accept="image/*" onchange="uploadInsPic(this, ${index})">
+            `;
+        }
+    };
+
+    rtaxPicInput.addEventListener('change', async function(e) {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            const result = await uploadImage(file, `rtax/${Date.now()}`);
+            if (result.success) {
+                rtaxPicUrl = result.url;
+                rtaxPicContainer.innerHTML = `
+                    <img src="${result.url}" alt="Roadtax">
+                    <input type="file" id="rtaxPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
+                    <button class="remove" onclick="event.stopPropagation(); removeRtaxPic()">✕</button>
+                `;
+                showToast('Gambar dimuat naik!', 'success');
+            } else {
+                showToast('Gagal muat naik: ' + result.error, 'error');
+            }
+        }
+    });
+
+    window.removeRtaxPic = function() {
+        rtaxPicUrl = '';
+        rtaxPicContainer.innerHTML = `
+            <span id="rtaxPicPlaceholder">📑</span>
+            <input type="file" id="rtaxPicInput" accept="image/*">
+        `;
+    };
+
+    // ===== SAVE =====
+    window.saveData = async function() {
+        const insPlate = insPlateNo.value;
+        const insDateVal = insDate.value.trim();
+        const insNoVal = insNo.value.trim();
+        const rtaxInsNoVal = rtaxInsNo.value.trim();
+        const rtaxPlate = rtaxPlateNo.value;
+        const rtaxDateVal = rtaxDate.value.trim();
+        const rtaxNoVal = rtaxNo.value.trim();
+
+        // Validation
+        if (!insPlate) { showToast('Sila pilih No. Pendaftaran untuk Insurans!', 'error'); return; }
+        if (!insDateVal) { showToast('Sila masukkan Tarikh Insurans!', 'error'); return; }
+        if (!insNoVal) { showToast('Sila masukkan No. Insurans!', 'error'); return; }
+        if (!rtaxInsNoVal) { showToast('Sila masukkan No. Insurans untuk Roadtax!', 'error'); return; }
+        if (!rtaxPlate) { showToast('Sila pilih No. Pendaftaran untuk Roadtax!', 'error'); return; }
+        if (!rtaxDateVal) { showToast('Sila masukkan Tarikh Roadtax!', 'error'); return; }
+        if (!rtaxNoVal) { showToast('Sila masukkan No. Roadtax!', 'error'); return; }
+
+        // Validate date format
+        const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
+        if (!dateRegex.test(insDateVal)) {
+            showToast('Format tarikh insurans salah! Guna DD-MM-YYYY', 'error');
+            return;
+        }
+        if (!dateRegex.test(rtaxDateVal)) {
+            showToast('Format tarikh roadtax salah! Guna DD-MM-YYYY', 'error');
+            return;
+        }
+
+        // Check if ins_no matches
+        if (insNoVal !== rtaxInsNoVal) {
+            showToast('No. Insurans tidak sama!', 'error');
+            return;
+        }
+
+        const insData = {
+            plate_no: insPlate,
+            ins_date: insDateVal,
+            ins_no: insNoVal,
+            ins_pic: insPicUrls.filter(url => url !== '')
+        };
+
+        const rtaxData = {
+            ins_no: rtaxInsNoVal,
+            plate_no: rtaxPlate,
+            rtax_date: rtaxDateVal,
+            rtax_no: rtaxNoVal,
+            rtax_pic: rtaxPicUrl || ''
+        };
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = '⏳ Menyimpan...';
+
+        try {
+            // Save Insurans
+            const insResult = await addData('ins', insData);
+            if (!insResult.success) {
+                showToast('Gagal simpan insurans: ' + insResult.error, 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 SAVE ALL';
+                return;
+            }
+
+            // Save Roadtax
+            const rtaxResult = await addData('rtax', rtaxData);
+            if (!rtaxResult.success) {
+                showToast('Gagal simpan roadtax: ' + rtaxResult.error, 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 SAVE ALL';
+                return;
+            }
+
+            showToast('✅ Insurans & Roadtax berjaya ditambah!', 'success');
+            setTimeout(() => {
+                window.location.href = 'input_frontpage.html';
+            }, 1000);
+
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = '💾 SAVE ALL';
+        }
+    };
+
+    // ===== RESET =====
+    window.resetForm = function() {
+        if (!confirm('Reset form? Data yang belum disimpan akan hilang.')) return;
+        
+        insPlateNo.value = '';
+        insDate.value = '';
+        insNo.value = '';
+        rtaxInsNo.value = '';
+        rtaxPlateNo.value = '';
+        rtaxDate.value = '';
+        rtaxNo.value = '';
+        
+        for (let i = 0; i < 4; i++) {
+            removeInsPic(i);
+        }
+        removeRtaxPic();
+        
+        showToast('Form telah direset', 'success');
+    };
+
+    // ===== BACK =====
+    window.goBack = function() {
+        window.location.href = 'input_frontpage.html';
+    };
+
+    // ===== TOAST =====
+    function showToast(message, type = 'success') {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ===== INIT =====
+    loadVehicles();
+</script>
+
+</body>
+</html>
