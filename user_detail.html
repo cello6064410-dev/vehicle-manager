@@ -8,7 +8,6 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a2e">
     <style>
-        /* ===== ALL EXISTING STYLES SAME AS BEFORE ===== */
         .detail-wrapper {
             min-height: 100vh;
             background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
@@ -339,6 +338,7 @@
         <span style="width:70px;"></span>
     </div>
 
+    <!-- ===== KENDERAAN SECTION ===== -->
     <div class="detail-section" id="kendSection">
         <div class="section-title">🚗 Maklumat Kenderaan</div>
         <div class="image-box" id="kendImageBox" onclick="openFullscreen('kend', 0)">
@@ -346,13 +346,13 @@
             <span class="tap-hint">👆 Tap full screen</span>
         </div>
         <div class="info-grid" id="kendInfo">
-            <!-- <div class="info-item"><span class="info-label">Kend_ID :</span> <span class="info-value" id="kendId">-</span></div> -->
             <div class="info-item"><span class="info-label">Plate :</span> <span class="info-value" id="kendPlate">-</span></div>
             <div class="info-item"><span class="info-label">Type :</span> <span class="info-value" id="kendType">-</span></div>
             <div class="info-item"><span class="info-label">Tahun :</span> <span class="info-value" id="kendYear">-</span></div>
         </div>
     </div>
 
+    <!-- ===== RTAX SECTION ===== -->
     <div class="detail-section" id="rtaxSection">
         <div class="section-title">📑 Roadtax</div>
         <div class="image-box" id="rtaxImageBox" onclick="openFullscreen('rtax', 0)">
@@ -360,16 +360,15 @@
             <span class="tap-hint">👆 Tap full screen</span>
         </div>
         <div class="info-grid" id="rtaxInfo">
-            <!-- <div class="info-item"><span class="info-label">Rtax_ID :</span> <span class="info-value" id="rtaxId">-</span></div> -->
             <div class="info-item"><span class="info-label">Rtax_date :</span> <span class="info-value" id="rtaxDate">-</span></div>
             <div class="info-item"><span class="info-label">Rtax_no :</span> <span class="info-value" id="rtaxNo">-</span></div>
         </div>
     </div>
 
+    <!-- ===== INS SECTION ===== -->
     <div class="detail-section" id="insSection">
         <div class="section-title">📋 Insurans</div>
         <div class="info-grid" id="insInfo">
-            <!-- <div class="info-item"><span class="info-label">Ins_ID :</span> <span class="info-value" id="insId">-</span></div> -->
             <div class="info-item"><span class="info-label">Ins_date :</span> <span class="info-value" id="insDate">-</span></div>
             <div class="info-item"><span class="info-label">Ins_no :</span> <span class="info-value" id="insNo">-</span></div>
         </div>
@@ -379,6 +378,7 @@
         </div>
     </div>
 
+    <!-- ===== MAINTENANCE BUTTON ===== -->
     <button class="maint-btn" id="maintBtn" onclick="goToMaint()">
         🔧 MAINTENANCE →
     </button>
@@ -430,16 +430,13 @@
     // DOM REFS
     // ============================================
     const pageTitle = document.getElementById('pageTitle');
-    const kendId = document.getElementById('kendId');
     const kendPlate = document.getElementById('kendPlate');
     const kendType = document.getElementById('kendType');
     const kendYear = document.getElementById('kendYear');
     const kendPlaceholder = document.getElementById('kendPlaceholder');
-    const rtaxId = document.getElementById('rtaxId');
     const rtaxDate = document.getElementById('rtaxDate');
     const rtaxNo = document.getElementById('rtaxNo');
     const rtaxPlaceholder = document.getElementById('rtaxPlaceholder');
-    const insId = document.getElementById('insId');
     const insDate = document.getElementById('insDate');
     const insNo = document.getElementById('insNo');
     const insImageGrid = document.getElementById('insImageGrid');
@@ -450,7 +447,6 @@
     const fsCounter = document.getElementById('fsCounter');
     const fsPrev = document.getElementById('fsPrev');
     const fsNext = document.getElementById('fsNext');
-    const fsCloseHint = document.getElementById('fsCloseHint');
 
     // ============================================
     // FULLSCREEN STATE
@@ -531,7 +527,7 @@
     };
 
     // ============================================
-    // CLOSE FULLSCREEN - SIMPLE TAP
+    // CLOSE FULLSCREEN
     // ============================================
     function closeFullscreen() {
         fullscreenOverlay.classList.remove('active');
@@ -543,7 +539,6 @@
 
     // Close: Tap on overlay background, close hint, or wrapper
     fullscreenOverlay.addEventListener('click', function(e) {
-        // Close if clicking the overlay itself, close hint, or the wrapper (but not the image)
         if (e.target === this || 
             e.target.id === 'fsCloseHint' || 
             e.target.closest('.fs-close-hint') ||
@@ -568,12 +563,11 @@
     });
 
     // ============================================
-    // ZOOM - SIMPLE PINCH
+    // ZOOM - PINCH
     // ============================================
     let lastDistance = 0;
     let initialPinchScale = 1;
 
-    // Touch start
     fullscreenImage.addEventListener('touchstart', function(e) {
         if (e.touches.length === 2) {
             const t1 = e.touches[0];
@@ -584,7 +578,6 @@
         }
     }, { passive: true });
 
-    // Touch move
     fullscreenImage.addEventListener('touchmove', function(e) {
         if (e.touches.length === 2) {
             e.preventDefault();
@@ -602,7 +595,6 @@
         }
     }, { passive: false });
 
-    // Touch end
     fullscreenImage.addEventListener('touchend', function(e) {
         lastDistance = 0;
         isZooming = false;
@@ -615,11 +607,11 @@
         pageTitle.textContent = `📄 ${plate}`;
 
         try {
+            // Get vehicle
             const vehicles = await getAllData('kend');
             const vehicle = vehicles.find(v => v.plate_no === plate);
 
             if (vehicle) {
-                kendId.textContent = vehicle.id || '-';
                 kendPlate.textContent = vehicle.plate_no || '-';
                 kendType.textContent = vehicle.type || '-';
                 kendYear.textContent = vehicle.year || '-';
@@ -629,17 +621,18 @@
                 }
             }
 
+            // Get latest rtax
             const rtaxData = await getLatestPerPlate('rtax', plate);
             if (rtaxData.length > 0) {
                 const rtax = rtaxData[0];
-                rtaxId.textContent = rtax.id || '-';
                 rtaxDate.textContent = rtax.rtax_date || '-';
                 rtaxNo.textContent = rtax.rtax_no || '-';
 
+                // Check expiry
                 if (rtax.rtax_date) {
                     const parts = rtax.rtax_date.split('-');
                     const expiry = new Date(parts[2], parts[1]-1, parts[0]);
-                    const dateEl = document.querySelector('#rtaxInfo .info-item:nth-child(2) .info-value');
+                    const dateEl = document.querySelector('#rtaxInfo .info-item:nth-child(1) .info-value');
                     if (expiry < new Date()) {
                         dateEl.className = 'info-value warning';
                         dateEl.textContent = rtax.rtax_date + ' << expired! >>';
@@ -653,17 +646,18 @@
                 }
             }
 
+            // Get latest ins
             const insData = await getLatestPerPlate('ins', plate);
             if (insData.length > 0) {
                 const ins = insData[0];
-                insId.textContent = ins.id || '-';
                 insDate.textContent = ins.ins_date || '-';
                 insNo.textContent = ins.ins_no || '-';
 
+                // Check expiry
                 if (ins.ins_date) {
                     const parts = ins.ins_date.split('-');
                     const expiry = new Date(parts[2], parts[1]-1, parts[0]);
-                    const dateEl = document.querySelector('#insInfo .info-item:nth-child(2) .info-value');
+                    const dateEl = document.querySelector('#insInfo .info-item:nth-child(1) .info-value');
                     if (expiry < new Date()) {
                         dateEl.className = 'info-value warning';
                         dateEl.textContent = ins.ins_date + ' << expired! >>';
@@ -672,6 +666,7 @@
                     }
                 }
 
+                // Render multiple images
                 if (ins.ins_pic && ins.ins_pic.length > 0) {
                     insImageGrid.innerHTML = ins.ins_pic.map((url, index) => `
                         <div class="thumb" onclick="openFullscreen('ins', ${index})">
