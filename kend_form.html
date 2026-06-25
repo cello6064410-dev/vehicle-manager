@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kenderaan - Vehicle Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="page-header">
+    <button class="back-btn" onclick="goBack()">← Kembali</button>
+    <h1 id="pageTitle">🚗 Tambah Kenderaan</h1>
+    <span style="width:44px;"></span>
+</div>
+
+<!-- ===== FORM ===== -->
+<div class="form-container">
+    <div class="form-title" id="formTitle">📝 Maklumat Kenderaan</div>
+    
+    <div class="form-group">
+        <label>Kend_ID <span style="color:rgba(255,255,255,0.3);font-size:0.75rem;">(auto)</span></label>
+        <input type="text" id="kendId" disabled placeholder="Auto generated">
+    </div>
+    
+    <div class="form-group">
+        <label>No. Pendaftaran <span class="required">*</span></label>
+        <input type="text" id="plateNo" placeholder="Contoh: ABD 6524" required>
+    </div>
+    
+    <div class="form-group">
+        <label>Jenis <span class="required">*</span></label>
+        <select id="type" required>
+            <option value="">Pilih Jenis</option>
+            <option value="Motosikal">🏍️ Motosikal</option>
+            <option value="Kereta">🚗 Kereta</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>Tahun</label>
+        <input type="text" id="year" placeholder="Contoh: 1976" maxlength="4">
+    </div>
+    
+    <div class="form-group">
+        <label>Gambar Kenderaan</label>
+        <div class="image-upload-grid">
+            <div class="image-upload-item" id="kendPicContainer">
+                <span id="kendPicPlaceholder">📷</span>
+                <input type="file" id="kendPicInput" accept="image/*">
+                <button class="remove" id="kendPicRemove" style="display:none;" onclick="removeKendPic()">✕</button>
+            </div>
+        </div>
+        <div class="hint">Tap gambar untuk pilih dari galeri</div>
+    </div>
+    
+    <div class="form-group">
+        <label>Gambar Geran</label>
+        <div class="image-upload-grid">
+            <div class="image-upload-item" id="geranPicContainer">
+                <span id="geranPicPlaceholder">📄</span>
+                <input type="file" id="geranPicInput" accept="image/*">
+                <button class="remove" id="geranPicRemove" style="display:none;" onclick="removeGeranPic()">✕</button>
+            </div>
+        </div>
+        <div class="hint">Tap gambar untuk pilih dari galeri</div>
+    </div>
+    
+    <button class="btn-save" id="saveBtn" onclick="saveData()">💾 SAVE</button>
+    <button class="btn-reset" onclick="resetForm()">🔄 Reset</button>
+</div>
+
+<script type="module">
+    import { 
+        getDataById, 
+        addData, 
+        updateData, 
+        uploadImage,
+        deleteImage
+    } from './firebase-config.js';
+
+    // ===== CHECK LOGIN =====
+    if (!sessionStorage.getItem('icNumber')) {
+        window.location.href = 'login.html';
+    }
+
+    // ===== GET ID FROM URL =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('id');
+    let isEditMode = false;
+    let existingData = null;
+    let kendPicUrl = '';
+    let geranPicUrl = '';
+
+    // ===== DOM REFS =====
+    const kendIdInput = document.getElementById('kendId');
+    const plateNoInput = document.getElementById('plateNo');
+    const typeSelect = document.getElementById('type');
+    const yearInput = document.getElementById('year');
+    const kendPicInput = document.getElementById('kendPicInput');
+    const geranPicInput = document.getElementById('geranPicInput');
+    const kendPicPlaceholder = document.getElementById('kendPicPlaceholder');
+    const geranPicPlaceholder = document.getElementById('geranPicPlaceholder');
+    const kendPicRemove = document.getElementById('kendPicRemove');
+    const geranPicRemove = document.getElementById('geranPicRemove');
+    const kendPicContainer = document.getElementById('kendPicContainer');
+    const geranPicContainer = document.getElementById('geranPicContainer');
+    const saveBtn = document.getElementById('saveBtn');
+    const pageTitle = document.getElementById('pageTitle');
+    const formTitle = document.getElementById('formTitle');
+
+    // ===== LOAD DATA IF EDIT MODE =====
+    if (editId) {
+        isEditMode = true;
+        pageTitle.textContent = '✏️ Edit Kenderaan';
+        formTitle.textContent = '✏️ Edit Maklumat Kenderaan';
+        saveBtn.textContent = '💾 UPDATE';
+        loadData(editId);
+    }
+
+    async function loadData(id) {
+        try {
+            const result = await getDataById('kend', id);
+            if (result.success) {
+                existingData = result.data;
+                kendIdInput.value = id;
+                plateNoInput.value = existingData.plate_no || '';
+                typeSelect.value = existingData.type || '';
+                yearInput.value = existingData.year || '';
+                
+                if (existingData.kend_pic) {
+                    kendPicUrl = existingData.kend_pic;
+                    showKendPic(kendPicUrl);
+                }
+                if (existingData.geran_pic) {
+                    geranPicUrl = existingData.geran_pic;
+                    showGeranPic(geranPicUrl);
+                }
+            } else {
+                showToast('Data tidak dijumpai', 'error');
+                setTimeout(() => window.location.href = 'input_frontpage.html', 1500);
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+        }
+    }
+
+    // ===== IMAGE HANDLING =====
+    kendPicInput.addEventListener('change', async function(e) {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            const result = await uploadImage(file);
+            if (result.success) {
+                kendPicUrl = result.url;
+                showKendPic(kendPicUrl);
+                showToast('Gambar dimuat naik!', 'success');
+            } else {
+                showToast('Gagal muat naik: ' + result.error, 'error');
+            }
+        }
+    });
+
+    geranPicInput.addEventListener('change', async function(e) {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            const result = await uploadImage(file);
+            if (result.success) {
+                geranPicUrl = result.url;
+                showGeranPic(geranPicUrl);
+                showToast('Gambar dimuat naik!', 'success');
+            } else {
+                showToast('Gagal muat naik: ' + result.error, 'error');
+            }
+        }
+    });
+
+    function showKendPic(url) {
+        kendPicContainer.innerHTML = `
+            <img src="${url}" alt="Kenderaan">
+            <input type="file" id="kendPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
+            <button class="remove" onclick="event.stopPropagation(); removeKendPic()">✕</button>
+        `;
+        document.getElementById('kendPicInput').addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                uploadImage(this.files[0]).then(result => {
+                    if (result.success) {
+                        kendPicUrl = result.url;
+                        showKendPic(kendPicUrl);
+                        showToast('Gambar dimuat naik!', 'success');
+                    } else {
+                        showToast('Gagal muat naik: ' + result.error, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function showGeranPic(url) {
+        geranPicContainer.innerHTML = `
+            <img src="${url}" alt="Geran">
+            <input type="file" id="geranPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
+            <button class="remove" onclick="event.stopPropagation(); removeGeranPic()">✕</button>
+        `;
+        document.getElementById('geranPicInput').addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                uploadImage(this.files[0]).then(result => {
+                    if (result.success) {
+                        geranPicUrl = result.url;
+                        showGeranPic(geranPicUrl);
+                        showToast('Gambar dimuat naik!', 'success');
+                    } else {
+                        showToast('Gagal muat naik: ' + result.error, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    window.removeKendPic = function() {
+        kendPicUrl = '';
+        kendPicContainer.innerHTML = `
+            <span id="kendPicPlaceholder">📷</span>
+            <input type="file" id="kendPicInput" accept="image/*">
+        `;
+        document.getElementById('kendPicInput').addEventListener('change', async function(e) {
+            if (this.files && this.files[0]) {
+                const result = await uploadImage(this.files[0]);
+                if (result.success) {
+                    kendPicUrl = result.url;
+                    showKendPic(kendPicUrl);
+                    showToast('Gambar dimuat naik!', 'success');
+                } else {
+                    showToast('Gagal muat naik: ' + result.error, 'error');
+                }
+            }
+        });
+    };
+
+    window.removeGeranPic = function() {
+        geranPicUrl = '';
+        geranPicContainer.innerHTML = `
+            <span id="geranPicPlaceholder">📄</span>
+            <input type="file" id="geranPicInput" accept="image/*">
+        `;
+        document.getElementById('geranPicInput').addEventListener('change', async function(e) {
+            if (this.files && this.files[0]) {
+                const result = await uploadImage(this.files[0]);
+                if (result.success) {
+                    geranPicUrl = result.url;
+                    showGeranPic(geranPicUrl);
+                    showToast('Gambar dimuat naik!', 'success');
+                } else {
+                    showToast('Gagal muat naik: ' + result.error, 'error');
+                }
+            }
+        });
+    };
+
+    // ===== SAVE =====
+    window.saveData = async function() {
+        const plate = plateNoInput.value.trim();
+        const type = typeSelect.value;
+        const year = yearInput.value.trim();
+
+        if (!plate) {
+            showToast('Sila masukkan No. Pendaftaran!', 'error');
+            plateNoInput.focus();
+            return;
+        }
+        if (!type) {
+            showToast('Sila pilih Jenis Kenderaan!', 'error');
+            typeSelect.focus();
+            return;
+        }
+
+        const data = {
+            plate_no: plate,
+            type: type,
+            year: year,
+            kend_pic: kendPicUrl || '',
+            geran_pic: geranPicUrl || ''
+        };
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = '⏳ Menyimpan...';
+
+        try {
+            let result;
+            if (isEditMode && editId) {
+                result = await updateData('kend', editId, data);
+                if (result.success) {
+                    showToast('Kenderaan berjaya dikemaskini!', 'success');
+                }
+            } else {
+                result = await addData('kend', data);
+                if (result.success) {
+                    showToast('Kenderaan berjaya ditambah!', 'success');
+                }
+            }
+
+            if (result && result.success) {
+                setTimeout(() => {
+                    window.location.href = 'input_frontpage.html';
+                }, 1000);
+            } else {
+                showToast('Gagal: ' + (result?.error || 'Unknown error'), 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = isEditMode ? '💾 UPDATE' : '💾 SAVE';
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = isEditMode ? '💾 UPDATE' : '💾 SAVE';
+        }
+    };
+
+    // ===== RESET =====
+    window.resetForm = function() {
+        if (isEditMode) {
+            if (!confirm('Reset form? Data yang belum disimpan akan hilang.')) return;
+            loadData(editId);
+        } else {
+            plateNoInput.value = '';
+            typeSelect.value = '';
+            yearInput.value = '';
+            removeKendPic();
+            removeGeranPic();
+            showToast('Form telah direset', 'success');
+        }
+    };
+
+    // ===== BACK =====
+    window.goBack = function() {
+        window.location.href = 'input_frontpage.html';
+    };
+
+    // ===== TOAST =====
+    function showToast(message, type = 'success') {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+</script>
+
+</body>
+</html>

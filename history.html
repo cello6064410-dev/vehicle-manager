@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>History - Vehicle Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="page-header">
+    <button class="back-btn" onclick="goBack()">← Kembali</button>
+    <h1 id="pageTitle">📊 History</h1>
+    <span style="width:44px;"></span>
+</div>
+
+<!-- ===== CONTENT ===== -->
+<div id="historyContainer">
+    <div style="text-align:center;color:rgba(255,255,255,0.3);padding:30px;">
+        ⏳ Loading...
+    </div>
+</div>
+
+<script type="module">
+    import { getHistory } from './firebase-config.js';
+
+    // ===== CHECK LOGIN =====
+    if (!sessionStorage.getItem('icNumber')) {
+        window.location.href = 'login.html';
+    }
+
+    // ===== GET PLATE FROM URL =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const plate = urlParams.get('plate');
+
+    if (!plate) {
+        document.getElementById('historyContainer').innerHTML = `
+            <div style="text-align:center;color:#ff4444;padding:30px;">
+                ❌ Tiada plate number dipilih
+            </div>
+        `;
+    }
+
+    // ===== LOAD HISTORY =====
+    async function loadHistory() {
+        const container = document.getElementById('historyContainer');
+        document.getElementById('pageTitle').textContent = `📊 History: ${plate}`;
+
+        try {
+            const insHistory = await getHistory('ins', plate);
+            const rtaxHistory = await getHistory('rtax', plate);
+            const maintHistory = await getHistory('maintenance', plate);
+
+            if (insHistory.length === 0 && rtaxHistory.length === 0 && maintHistory.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;color:rgba(255,255,255,0.3);padding:30px;">
+                        📭 Tiada rekod untuk ${plate}
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            if (insHistory.length > 0) {
+                html += `<h3 style="color:#64c8ff;margin:16px 0 8px;">📋 Insurans</h3>`;
+                insHistory.forEach(item => {
+                    html += `
+                        <div class="history-item">
+                            <div class="date">📅 ${item.ins_date || '-'}</div>
+                            <div class="info">No. Insurans: ${item.ins_no || '-'}</div>
+                            <div class="info" style="font-size:0.7rem;color:rgba(255,255,255,0.3);">ID: ${item.id}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (rtaxHistory.length > 0) {
+                html += `<h3 style="color:#ffcc00;margin:16px 0 8px;">📑 Roadtax</h3>`;
+                rtaxHistory.forEach(item => {
+                    html += `
+                        <div class="history-item">
+                            <div class="date">📅 ${item.rtax_date || '-'}</div>
+                            <div class="info">No. Roadtax: ${item.rtax_no || '-'}</div>
+                            <div class="info" style="font-size:0.7rem;color:rgba(255,255,255,0.3);">ID: ${item.id}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (maintHistory.length > 0) {
+                html += `<h3 style="color:#00e676;margin:16px 0 8px;">🔧 Maintenance</h3>`;
+                maintHistory.forEach(item => {
+                    html += `
+                        <div class="history-item">
+                            <div class="date">📅 ${item.date || '-'}</div>
+                            <div class="info">${item.subject || '-'}</div>
+                            <div class="info">🏪 ${item.workshop || '-'} | 💰 RM ${(item.cost || 0).toFixed(2)}</div>
+                            <div class="info" style="font-size:0.7rem;color:rgba(255,255,255,0.3);">ID: ${item.id}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+
+        } catch (error) {
+            console.error('Error loading history:', error);
+            container.innerHTML = `
+                <div style="text-align:center;color:#ff4444;padding:30px;">
+                    ❌ Error: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    // ===== BACK =====
+    window.goBack = function() {
+        window.location.href = 'input_frontpage.html';
+    };
+
+    // ===== INIT =====
+    if (plate) {
+        loadHistory();
+    }
+</script>
+
+</body>
+</html>
