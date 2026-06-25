@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ms">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,83 +7,290 @@
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a2e">
+    <style>
+        /* ===== GATE STYLES ===== */
+        .gate-wrapper {
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .gate-card {
+            background: rgba(26, 26, 46, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 40px 32px;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+            text-align: center;
+        }
+
+        .gate-icon {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 8px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .gate-card h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        .gate-card h1 .color-asli {
+            background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gate-card h1 .color-busker {
+            background: linear-gradient(135deg, #ff8800 0%, #ff4400 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gate-subtitle {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.9rem;
+            margin-top: 4px;
+            font-family: Arial, sans-serif;
+        }
+
+        .gate-divider {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #ffcc00, #ff8800);
+            border-radius: 10px;
+            margin: 24px auto 30px;
+        }
+
+        .gate-user {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.3);
+            margin-bottom: 20px;
+        }
+
+        .gate-user span {
+            color: #ffcc00;
+        }
+
+        /* ===== GATE BUTTONS ===== */
+        .gate-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .gate-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 22px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: left;
+            min-height: 70px;
+        }
+
+        .gate-btn:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.06);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .gate-btn:active {
+            transform: scale(0.97);
+        }
+
+        .gate-btn .gb-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .gate-btn .gb-icon {
+            font-size: 2rem;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .gate-btn .gb-icon.input-icon {
+            background: rgba(255,204,0,0.12);
+        }
+
+        .gate-btn .gb-icon.users-icon {
+            background: rgba(100,200,255,0.12);
+        }
+
+        .gate-btn .gb-content .gb-label {
+            font-size: 1rem;
+            font-weight: 600;
+            display: block;
+        }
+
+        .gate-btn .gb-content .gb-desc {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.35);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .gate-btn .gb-arrow {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .gate-btn:hover .gb-arrow {
+            color: #ffcc00;
+            transform: translateX(4px);
+        }
+
+        /* ===== LOGOUT ===== */
+        .gate-logout {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .gate-logout button {
+            background: rgba(255,68,68,0.08);
+            border: 1px solid rgba(255,68,68,0.1);
+            color: #ff6b6b;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .gate-logout button:hover {
+            background: rgba(255,68,68,0.15);
+            border-color: rgba(255,68,68,0.2);
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .gate-card {
+                padding: 30px 20px;
+                border-radius: 24px;
+            }
+
+            .gate-card h1 {
+                font-size: 1.8rem;
+            }
+
+            .gate-btn {
+                padding: 14px 16px;
+                min-height: 60px;
+            }
+
+            .gate-btn .gb-icon {
+                font-size: 1.5rem;
+                width: 40px;
+                height: 40px;
+            }
+
+            .gate-btn .gb-content .gb-label {
+                font-size: 0.9rem;
+            }
+
+            .gate-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<div class="index-wrapper">
-    <div class="index-card">
-        <div class="index-header">
-            <div class="index-icon">🚗</div>
-            <h1>
-                <span class="color-asli">Vehicle</span>
-                <span class="color-busker">Manager</span>
-            </h1>
-            <p class="index-subtitle">Sistem Pengurusan Kenderaan Peribadi</p>
+<div class="gate-wrapper">
+    <div class="gate-card">
+        <!-- ===== LOGO ===== -->
+        <span class="gate-icon">🚗</span>
+        <h1>
+            <span class="color-asli">Vehicle</span>
+            <span class="color-busker">Manager</span>
+        </h1>
+        <p class="gate-subtitle">Sistem Pengurusan Kenderaan Peribadi</p>
+        <div class="gate-divider"></div>
+
+        <!-- ===== USER ===== -->
+        <div class="gate-user">
+            👤 Logged in as: <span id="userDisplay">---</span>
         </div>
 
-        <div class="index-divider"></div>
-
-        <div class="index-buttons">
-            <button onclick="goToInput()" class="index-btn admin-btn">
-                <div class="index-btn-icon">📝</div>
-                <div class="index-btn-content">
-                    <span class="index-btn-label">Input Data</span>
-                    <span class="index-btn-desc">Tambah / Edit Data Kenderaan</span>
+        <!-- ===== BUTTONS ===== -->
+        <div class="gate-buttons">
+            <div class="gate-btn" onclick="goTo('input_frontpage.html')">
+                <div class="gb-left">
+                    <div class="gb-icon input-icon">📝</div>
+                    <div class="gb-content">
+                        <span class="gb-label">Input</span>
+                        <span class="gb-desc">Tambah / Edit Data</span>
+                    </div>
                 </div>
-                <div class="index-btn-arrow">→</div>
-            </button>
+                <span class="gb-arrow">→</span>
+            </div>
 
-            <button onclick="goToUsers()" class="index-btn viewer-btn" style="opacity:0.5; cursor:not-allowed;">
-                <div class="index-btn-icon">👀</div>
-                <div class="index-btn-content">
-                    <span class="index-btn-label">Users (Coming Soon)</span>
-                    <span class="index-btn-desc">Lihat Data Kenderaan</span>
+            <div class="gate-btn" onclick="goTo('users.html')">
+                <div class="gb-left">
+                    <div class="gb-icon users-icon">👀</div>
+                    <div class="gb-content">
+                        <span class="gb-label">Users</span>
+                        <span class="gb-desc">Lihat & Semak Data</span>
+                    </div>
                 </div>
-                <div class="index-btn-arrow">→</div>
-            </button>
+                <span class="gb-arrow">→</span>
+            </div>
         </div>
 
-        <div class="index-footer">
-            <span style="color:#666; font-size:0.8rem;">Logged in as: <span id="userDisplay" style="color:#ffcc00;"></span></span>
-            <br>
-            <button onclick="logout()" style="margin-top:10px; background:#4a2a2a; color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">🚪 Logout</button>
+        <!-- ===== LOGOUT ===== -->
+        <div class="gate-logout">
+            <button onclick="logout()">🚪 Logout</button>
         </div>
     </div>
 </div>
 
-<style>
-    .color-asli {
-        background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .color-busker {
-        background: linear-gradient(135deg, #ff8800 0%, #ff4400 100%);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-</style>
-
 <script>
-    // ============================================
-    // CHECK LOGIN
-    // ============================================
+    // ===== CHECK LOGIN =====
     const icNumber = sessionStorage.getItem('icNumber');
-
     if (!icNumber) {
         window.location.href = 'login.html';
     }
 
-    // Display IC
+    // Display user
     document.getElementById('userDisplay').textContent = icNumber;
 
-    // ============================================
-    // NAVIGATION
-    // ============================================
-    function goToInput() {
-        window.location.href = 'input.html';
-    }
-
-    function goToUsers() {
-        alert('📢 Users page coming soon!');
+    // ===== NAVIGATION =====
+    function goTo(page) {
+        window.location.href = page;
     }
 
     function logout() {
