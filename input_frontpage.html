@@ -46,7 +46,6 @@
         container.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:30px;">⏳ Loading...</div>';
 
         try {
-            // Get all kenderaan
             const vehicles = await getAllData('kend');
             
             if (vehicles.length === 0) {
@@ -58,21 +57,17 @@
                 return;
             }
 
-            // For each vehicle, get latest ins, rtax, maintenance
             let html = '';
             
             for (const vehicle of vehicles) {
                 const plate = vehicle.plate_no || '';
                 
-                // Get latest insurans
                 const insData = await getLatestPerPlate('ins', plate);
                 const latestIns = insData.length > 0 ? insData[0] : null;
                 
-                // Get latest roadtax
                 const rtaxData = await getLatestPerPlate('rtax', plate);
                 const latestRtax = rtaxData.length > 0 ? rtaxData[0] : null;
                 
-                // Get latest maintenance
                 const maintData = await getLatestPerPlate('maintenance', plate);
                 const latestMaint = maintData.length > 0 ? maintData[0] : null;
 
@@ -156,7 +151,6 @@
         toast.className = `toast ${type}`;
         toast.textContent = message;
         document.body.appendChild(toast);
-        
         setTimeout(() => toast.remove(), 3000);
     }
 

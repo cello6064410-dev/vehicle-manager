@@ -50,7 +50,6 @@
         document.getElementById('pageTitle').textContent = `📊 History: ${plate}`;
 
         try {
-            // Get all history for this plate from all collections
             const insHistory = await getHistory('ins', plate);
             const rtaxHistory = await getHistory('rtax', plate);
             const maintHistory = await getHistory('maintenance', plate);
@@ -66,7 +65,6 @@
 
             let html = '';
 
-            // Insurans History
             if (insHistory.length > 0) {
                 html += `<h3 style="color:#64c8ff;margin:16px 0 8px;">📋 Insurans</h3>`;
                 insHistory.forEach(item => {
@@ -80,7 +78,6 @@
                 });
             }
 
-            // Roadtax History
             if (rtaxHistory.length > 0) {
                 html += `<h3 style="color:#ffcc00;margin:16px 0 8px;">📑 Roadtax</h3>`;
                 rtaxHistory.forEach(item => {
@@ -94,7 +91,6 @@
                 });
             }
 
-            // Maintenance History
             if (maintHistory.length > 0) {
                 html += `<h3 style="color:#00e676;margin:16px 0 8px;">🔧 Maintenance</h3>`;
                 maintHistory.forEach(item => {

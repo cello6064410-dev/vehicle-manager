@@ -152,7 +152,7 @@
     kendPicInput.addEventListener('change', async function(e) {
         if (this.files && this.files[0]) {
             const file = this.files[0];
-            const result = await uploadImage(file, `kend/${Date.now()}`);
+            const result = await uploadImage(file);
             if (result.success) {
                 kendPicUrl = result.url;
                 showKendPic(kendPicUrl);
@@ -166,7 +166,7 @@
     geranPicInput.addEventListener('change', async function(e) {
         if (this.files && this.files[0]) {
             const file = this.files[0];
-            const result = await uploadImage(file, `geran/${Date.now()}`);
+            const result = await uploadImage(file);
             if (result.success) {
                 geranPicUrl = result.url;
                 showGeranPic(geranPicUrl);
@@ -183,8 +183,19 @@
             <input type="file" id="kendPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
             <button class="remove" onclick="event.stopPropagation(); removeKendPic()">✕</button>
         `;
-        document.getElementById('kendPicInput').addEventListener('change', kendPicInput._listener || 
-            ((e) => kendPicInput.dispatchEvent(new Event('change'))));
+        document.getElementById('kendPicInput').addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                uploadImage(this.files[0]).then(result => {
+                    if (result.success) {
+                        kendPicUrl = result.url;
+                        showKendPic(kendPicUrl);
+                        showToast('Gambar dimuat naik!', 'success');
+                    } else {
+                        showToast('Gagal muat naik: ' + result.error, 'error');
+                    }
+                });
+            }
+        });
     }
 
     function showGeranPic(url) {
@@ -193,6 +204,19 @@
             <input type="file" id="geranPicInput" accept="image/*" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;">
             <button class="remove" onclick="event.stopPropagation(); removeGeranPic()">✕</button>
         `;
+        document.getElementById('geranPicInput').addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                uploadImage(this.files[0]).then(result => {
+                    if (result.success) {
+                        geranPicUrl = result.url;
+                        showGeranPic(geranPicUrl);
+                        showToast('Gambar dimuat naik!', 'success');
+                    } else {
+                        showToast('Gagal muat naik: ' + result.error, 'error');
+                    }
+                });
+            }
+        });
     }
 
     window.removeKendPic = function() {
@@ -201,8 +225,17 @@
             <span id="kendPicPlaceholder">📷</span>
             <input type="file" id="kendPicInput" accept="image/*">
         `;
-        document.getElementById('kendPicInput').addEventListener('change', (e) => {
-            // Re-bind event
+        document.getElementById('kendPicInput').addEventListener('change', async function(e) {
+            if (this.files && this.files[0]) {
+                const result = await uploadImage(this.files[0]);
+                if (result.success) {
+                    kendPicUrl = result.url;
+                    showKendPic(kendPicUrl);
+                    showToast('Gambar dimuat naik!', 'success');
+                } else {
+                    showToast('Gagal muat naik: ' + result.error, 'error');
+                }
+            }
         });
     };
 
@@ -212,6 +245,18 @@
             <span id="geranPicPlaceholder">📄</span>
             <input type="file" id="geranPicInput" accept="image/*">
         `;
+        document.getElementById('geranPicInput').addEventListener('change', async function(e) {
+            if (this.files && this.files[0]) {
+                const result = await uploadImage(this.files[0]);
+                if (result.success) {
+                    geranPicUrl = result.url;
+                    showGeranPic(geranPicUrl);
+                    showToast('Gambar dimuat naik!', 'success');
+                } else {
+                    showToast('Gagal muat naik: ' + result.error, 'error');
+                }
+            }
+        });
     };
 
     // ===== SAVE =====
