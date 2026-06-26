@@ -230,12 +230,13 @@
             max-height: 100%;
             object-fit: contain;
             border-radius: 8px;
-            transform: scale(1);
+            transform: scale(1) translate(0px, 0px);
             transition: transform 0.05s ease;
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
+            will-change: transform;
         }
 
         .fullscreen-overlay .fs-close-hint {
@@ -454,7 +455,8 @@
     let fullscreenImages = [];
     let currentIndex = 0;
     let currentScale = 1;
-    let isZooming = false;
+    let panX = 0;
+    let panY = 0;
 
     // ============================================
     // NAVIGATION
@@ -503,8 +505,11 @@
         updateFullscreenImage();
         fullscreenOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
+        // Reset zoom and pan
         currentScale = 1;
-        fullscreenImage.style.transform = 'scale(1)';
+        panX = 0;
+        panY = 0;
+        fullscreenImage.style.transform = 'scale(1) translate(0px, 0px)';
     }
 
     function updateFullscreenImage() {
@@ -513,8 +518,11 @@
             fsCounter.textContent = `${currentIndex + 1} / ${fullscreenImages.length}`;
             fsPrev.style.display = fullscreenImages.length > 1 ? 'flex' : 'none';
             fsNext.style.display = fullscreenImages.length > 1 ? 'flex' : 'none';
+            // Reset transform
             currentScale = 1;
-            fullscreenImage.style.transform = 'scale(1)';
+            panX = 0;
+            panY = 0;
+            fullscreenImage.style.transform = 'scale(1) translate(0px, 0px)';
         }
     }
 
@@ -533,6 +541,8 @@
         fullscreenOverlay.classList.remove('active');
         document.body.style.overflow = '';
         currentScale = 1;
+        panX = 0;
+        panY = 0;
     }
 
     window.closeFullscreen = closeFullscreen;
@@ -563,23 +573,36 @@
     });
 
     // ============================================
-    // ZOOM - PINCH
+    // ZOOM + PAN (FIXED)
     // ============================================
     let lastDistance = 0;
     let initialPinchScale = 1;
+    let lastPanX = 0;
+    let lastPanY = 0;
+    let isPanning = false;
+    let isZooming = false;
 
+    // Touch start
     fullscreenImage.addEventListener('touchstart', function(e) {
         if (e.touches.length === 2) {
+            // Pinch start
             const t1 = e.touches[0];
             const t2 = e.touches[1];
             lastDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
             initialPinchScale = currentScale;
             isZooming = true;
+        } else if (e.touches.length === 1 && currentScale > 1) {
+            // Pan start (only if zoomed in)
+            isPanning = true;
+            lastPanX = e.touches[0].clientX;
+            lastPanY = e.touches[0].clientY;
         }
     }, { passive: true });
 
+    // Touch move
     fullscreenImage.addEventListener('touchmove', function(e) {
         if (e.touches.length === 2) {
+            // Pinch
             e.preventDefault();
             const t1 = e.touches[0];
             const t2 = e.touches[1];
@@ -589,16 +612,48 @@
                 const ratio = distance / lastDistance;
                 let newScale = Math.max(0.5, Math.min(3, initialPinchScale * ratio));
                 currentScale = newScale;
-                fullscreenImage.style.transform = `scale(${newScale})`;
+                fullscreenImage.style.transform = `scale(${newScale}) translate(${panX}px, ${panY}px)`;
                 fullscreenImage.style.transition = 'none';
             }
+        } else if (e.touches.length === 1 && isPanning && currentScale > 1) {
+            // Pan
+            e.preventDefault();
+            const dx = e.touches[0].clientX - lastPanX;
+            const dy = e.touches[0].clientY - lastPanY;
+            panX += dx;
+            panY += dy;
+            lastPanX = e.touches[0].clientX;
+            lastPanY = e.touches[0].clientY;
+            fullscreenImage.style.transform = `scale(${currentScale}) translate(${panX}px, ${panY}px)`;
+            fullscreenImage.style.transition = 'none';
         }
     }, { passive: false });
 
+    // Touch end
     fullscreenImage.addEventListener('touchend', function(e) {
         lastDistance = 0;
         isZooming = false;
+        isPanning = false;
     }, { passive: true });
+
+    // Double tap to reset zoom + pan
+    fullscreenImage.addEventListener('dblclick', function(e) {
+        currentScale = 1;
+        panX = 0;
+        panY = 0;
+        fullscreenImage.style.transform = 'scale(1) translate(0px, 0px)';
+        fullscreenImage.style.transition = 'transform 0.3s ease';
+    });
+
+    // Mouse wheel zoom (desktop)
+    fullscreenImage.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        let newScale = Math.max(0.5, Math.min(3, currentScale + delta));
+        currentScale = newScale;
+        fullscreenImage.style.transform = `scale(${newScale}) translate(${panX}px, ${panY}px)`;
+        fullscreenImage.style.transition = 'transform 0.1s ease';
+    }, { passive: false });
 
     // ============================================
     // LOAD DATA
@@ -607,7 +662,6 @@
         pageTitle.textContent = `📄 ${plate}`;
 
         try {
-            // Get vehicle
             const vehicles = await getAllData('kend');
             const vehicle = vehicles.find(v => v.plate_no === plate);
 
@@ -621,14 +675,12 @@
                 }
             }
 
-            // Get latest rtax
             const rtaxData = await getLatestPerPlate('rtax', plate);
             if (rtaxData.length > 0) {
                 const rtax = rtaxData[0];
                 rtaxDate.textContent = rtax.rtax_date || '-';
                 rtaxNo.textContent = rtax.rtax_no || '-';
 
-                // Check expiry
                 if (rtax.rtax_date) {
                     const parts = rtax.rtax_date.split('-');
                     const expiry = new Date(parts[2], parts[1]-1, parts[0]);
@@ -646,14 +698,12 @@
                 }
             }
 
-            // Get latest ins
             const insData = await getLatestPerPlate('ins', plate);
             if (insData.length > 0) {
                 const ins = insData[0];
                 insDate.textContent = ins.ins_date || '-';
                 insNo.textContent = ins.ins_no || '-';
 
-                // Check expiry
                 if (ins.ins_date) {
                     const parts = ins.ins_date.split('-');
                     const expiry = new Date(parts[2], parts[1]-1, parts[0]);
@@ -666,7 +716,6 @@
                     }
                 }
 
-                // Render multiple images
                 if (ins.ins_pic && ins.ins_pic.length > 0) {
                     insImageGrid.innerHTML = ins.ins_pic.map((url, index) => `
                         <div class="thumb" onclick="openFullscreen('ins', ${index})">
